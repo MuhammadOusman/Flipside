@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #000000;
+  --comic-red: #ff3333;
+  --comic-purple: #6a0dad;
+  --goblin-green: #50c878;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-comic-red: var(--comic-red);
+  --color-comic-purple: var(--comic-purple);
+  --color-goblin-green: var(--goblin-green);
+  --font-sans: var(--font-space-grotesk);
+  --font-heading: var(--font-bangers);
+}
+
+/* Comic Book Halftone Pattern Background */
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-space-grotesk), sans-serif;
+  background-image: radial-gradient(circle, #00000008 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Smooth Scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #ffffff;
+  border-left: 2px solid #000000;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--comic-red);
+  border: 2px solid #000000;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--comic-purple);
+}
+
+/* Hard Shadow Utility */
+.shadow-hard {
+  box-shadow: 5px 5px 0px 0px #000000;
+}
+
+.shadow-hard-lg {
+  box-shadow: 8px 8px 0px 0px #000000;
+}
+
+/* Comic Border */
+.border-comic {
+  border: 3px solid #000000;
+}
+
+/* Hover translate effect for buttons */
+.hover-translate:hover {
+  transform: translate(3px, 3px);
+}
+
+/* Sold Out Stamp */
+.sold-stamp {
+  transform: rotate(-15deg);
+  font-weight: bold;
+  color: #ff3333;
+}
