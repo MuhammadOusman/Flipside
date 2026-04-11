@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Users,
   Eye,
@@ -32,6 +32,15 @@ export default function AnalyticsPage() {
   const analytics = useAnalytics();
   const data = useMemo(() => analytics.getAnalytics(), [analytics]);
   const [timeRange, setTimeRange] = useState<"today" | "week" | "month">("week");
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setNow(Date.now());
+    }, 60 * 1000);
+
+    return () => window.clearInterval(timer);
+  }, []);
 
   const hasAnalytics = data.totalEvents > 0;
 
@@ -56,7 +65,6 @@ export default function AnalyticsPage() {
   );
 
   const trafficData = useMemo(() => {
-    const now = Date.now();
     const dayMs = 24 * 60 * 60 * 1000;
     const formatDay = (timestamp: number) =>
       new Date(timestamp).toLocaleDateString("en-US", { weekday: "short" });
@@ -91,7 +99,7 @@ export default function AnalyticsPage() {
       pageViews: bucket.pageViews,
       uniqueVisitors: bucket.visitors.size,
     }));
-  }, [pageViewEvents]);
+  }, [now, pageViewEvents]);
 
   const topPagesData = useMemo(
     () =>
@@ -118,7 +126,6 @@ export default function AnalyticsPage() {
   );
 
   const recentActivity = useMemo(() => {
-    const now = Date.now();
     const tenMinutes = 10 * 60 * 1000;
     const recent = analytics.events.filter((event) => now - event.timestamp < tenMinutes);
     const activeUsers = new Set(
@@ -136,7 +143,7 @@ export default function AnalyticsPage() {
       activeCarts: recent.filter((event) => event.type === "cart_add").length,
       avgSession: "n/a",
     };
-  }, [analytics.events]);
+  }, [analytics.events, now]);
 
   const stats = [
     {
