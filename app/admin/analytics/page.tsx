@@ -132,7 +132,7 @@ export default function AnalyticsPage() {
 
     return {
       activeUsers,
-      pagesPerMin,
+      pagesPerMin: pageViewsPerMin,
       activeCarts: recent.filter((event) => event.type === "cart_add").length,
       avgSession: "n/a",
     };
