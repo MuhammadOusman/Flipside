@@ -30,27 +30,27 @@ export default function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h3 className="font-heading text-2xl mb-4 text-[--comic-red]">
+            <h3 className="font-heading text-2xl mb-4 text-[var(--comic-red)]">
               QUICK LINKS
             </h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/" className="hover:text-[--comic-red] transition">
+                <Link href="/" className="hover:text-[var(--comic-red)] transition">
                   Home
                 </Link>
               </li>
               <li>
-                <Link href="/shop" className="hover:text-[--comic-red] transition">
+                <Link href="/shop" className="hover:text-[var(--comic-red)] transition">
                   Shop
                 </Link>
               </li>
               <li>
-                <Link href="/about" className="hover:text-[--comic-red] transition">
+                <Link href="/about" className="hover:text-[var(--comic-red)] transition">
                   About Us
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="hover:text-[--comic-red] transition">
+                <Link href="/contact" className="hover:text-[var(--comic-red)] transition">
                   Contact
                 </Link>
               </li>
@@ -59,27 +59,27 @@ export default function Footer() {
 
           {/* Categories */}
           <div>
-            <h3 className="font-heading text-2xl mb-4 text-[--comic-red]">
+            <h3 className="font-heading text-2xl mb-4 text-[var(--comic-red)]">
               CATEGORIES
             </h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/shop?brand=jordan" className="hover:text-[--comic-red] transition">
+                <Link href="/shop?brand=jordan" className="hover:text-[var(--comic-red)] transition">
                   Jordans
                 </Link>
               </li>
               <li>
-                <Link href="/shop?brand=nike" className="hover:text-[--comic-red] transition">
+                <Link href="/shop?brand=nike" className="hover:text-[var(--comic-red)] transition">
                   Nike Dunks
                 </Link>
               </li>
               <li>
-                <Link href="/shop?brand=yeezy" className="hover:text-[--comic-red] transition">
+                <Link href="/shop?brand=yeezy" className="hover:text-[var(--comic-red)] transition">
                   Yeezy
                 </Link>
               </li>
               <li>
-                <Link href="/shop?brand=new-balance" className="hover:text-[--comic-red] transition">
+                <Link href="/shop?brand=new-balance" className="hover:text-[var(--comic-red)] transition">
                   New Balance
                 </Link>
               </li>
@@ -88,24 +88,24 @@ export default function Footer() {
 
           {/* Contact */}
           <div>
-            <h3 className="font-heading text-2xl mb-4 text-[--comic-red]">
+            <h3 className="font-heading text-2xl mb-4 text-[var(--comic-red)]">
               CONTACT US
             </h3>
             <ul className="space-y-3">
               <li className="flex items-center gap-2">
-                <Phone size={18} className="text-[--comic-red]" />
-                <a href="tel:+923001234567" className="hover:text-[--comic-red] transition">
+                <Phone size={18} className="text-[var(--comic-red)]" />
+                <a href="tel:+923001234567" className="hover:text-[var(--comic-red)] transition">
                   +92 300 1234567
                 </a>
               </li>
               <li className="flex items-center gap-2">
-                <Mail size={18} className="text-[--comic-red]" />
-                <a href="mailto:hello@flipside.pk" className="hover:text-[--comic-red] transition">
+                <Mail size={18} className="text-[var(--comic-red)]" />
+                <a href="mailto:hello@flipside.pk" className="hover:text-[var(--comic-red)] transition">
                   hello@flipside.pk
                 </a>
               </li>
               <li className="flex items-center gap-2">
-                <MapPin size={18} className="text-[--comic-red]" />
+                <MapPin size={18} className="text-[var(--comic-red)]" />
                 <span>Karachi, Pakistan</span>
               </li>
             </ul>
@@ -116,7 +116,7 @@ export default function Footer() {
                 href="https://instagram.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 bg-white text-black border-2 border-white hover:bg-[--comic-red] hover:text-white transition"
+                className="p-2 bg-white text-black border-2 border-white hover:bg-[var(--comic-red)] hover:text-white transition"
                 whileHover={{ scale: 1.1, rotate: 5 }}
               >
                 <Instagram size={20} />
@@ -125,7 +125,7 @@ export default function Footer() {
                 href="https://facebook.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 bg-white text-black border-2 border-white hover:bg-[--comic-purple] hover:text-white transition"
+                className="p-2 bg-white text-black border-2 border-white hover:bg-[var(--comic-purple)] hover:text-white transition"
                 whileHover={{ scale: 1.1, rotate: -5 }}
               >
                 <Facebook size={20} />
@@ -143,10 +143,10 @@ export default function Footer() {
               © {currentYear} Flipside. All rights reserved.
             </p>
             <div className="flex gap-6 text-sm">
-              <Link href="/privacy" className="hover:text-[--comic-red] transition">
+              <Link href="/privacy" className="hover:text-[var(--comic-red)] transition">
                 Privacy Policy
               </Link>
-              <Link href="/terms" className="hover:text-[--comic-red] transition">
+              <Link href="/terms" className="hover:text-[var(--comic-red)] transition">
                 Terms & Conditions
               </Link>
             </div>
@@ -155,7 +155,7 @@ export default function Footer() {
       </div>
 
       {/* Comic Strip */}
-      <div className="bg-[--comic-red] text-white py-2 text-center font-heading text-sm">
+      <div className="bg-[var(--comic-red)] text-white py-2 text-center font-heading text-sm">
         ⚡ FRESH KICKS • UNBEATABLE PRICES • 100% LEGIT ⚡
       </div>
     </footer>

@@ -5,6 +5,7 @@
   --foreground: #000000;
   --comic-red: #ff3333;
   --comic-purple: #6a0dad;
+  --comic-green: #50c878;
   --goblin-green: #50c878;
 }
 
@@ -13,6 +14,7 @@
   --color-foreground: var(--foreground);
   --color-comic-red: var(--comic-red);
   --color-comic-purple: var(--comic-purple);
+  --color-comic-green: var(--comic-green);
   --color-goblin-green: var(--goblin-green);
   --font-sans: var(--font-space-grotesk);
   --font-heading: var(--font-bangers);

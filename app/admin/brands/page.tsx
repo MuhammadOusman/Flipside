@@ -7,7 +7,6 @@ import {
   Edit,
   Trash2,
   Save,
-  X,
   Tag,
 } from "lucide-react";
 
@@ -20,67 +19,10 @@ type Brand = {
   productCount: number;
 };
 
-const mockBrands: Brand[] = [
-  {
-    id: "1",
-    name: "Nike",
-    slug: "nike",
-    description: "Just Do It - American sportswear brand",
-    isActive: true,
-    productCount: 45,
-  },
-  {
-    id: "2",
-    name: "Adidas",
-    slug: "adidas",
-    description: "Impossible is Nothing - German sportswear",
-    isActive: true,
-    productCount: 32,
-  },
-  {
-    id: "3",
-    name: "Jordan",
-    slug: "jordan",
-    description: "Basketball sneakers by Nike",
-    isActive: true,
-    productCount: 28,
-  },
-  {
-    id: "4",
-    name: "Yeezy",
-    slug: "yeezy",
-    description: "Kanye West collaboration with Adidas",
-    isActive: true,
-    productCount: 15,
-  },
-  {
-    id: "5",
-    name: "New Balance",
-    slug: "new-balance",
-    description: "American footwear brand",
-    isActive: true,
-    productCount: 12,
-  },
-  {
-    id: "6",
-    name: "Converse",
-    slug: "converse",
-    description: "Classic Chuck Taylor All-Stars",
-    isActive: true,
-    productCount: 8,
-  },
-  {
-    id: "7",
-    name: "Vans",
-    slug: "vans",
-    description: "Skateboarding shoes and apparel",
-    isActive: true,
-    productCount: 6,
-  },
-];
+const initialBrands: Brand[] = [];
 
 export default function BrandsPage() {
-  const [brands, setBrands] = useState(mockBrands);
+  const [brands, setBrands] = useState<Brand[]>(initialBrands);
   const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [deleteModal, setDeleteModal] = useState<string | null>(null);
@@ -153,12 +95,31 @@ export default function BrandsPage() {
         </div>
         <button
           onClick={() => setIsAdding(true)}
-          className="bg-[--comic-green] text-white px-6 py-3 border-4 border-black shadow-hard font-heading text-xl hover:scale-105 transition flex items-center gap-2"
+          className="bg-[var(--comic-green)] text-white px-6 py-3 border-4 border-black shadow-hard font-heading text-xl hover:scale-105 transition flex items-center gap-2"
         >
           <Plus size={24} />
           ADD BRAND
         </button>
       </div>
+
+      {brands.length === 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-yellow-50 border-4 border-black shadow-hard p-6"
+        >
+          <h2 className="font-heading text-3xl mb-3">No brands yet</h2>
+          <p className="text-gray-700 font-bold mb-4">
+            Create your first brand and it will appear here. This page no longer shows placeholder data.
+          </p>
+          <button
+            onClick={() => setIsAdding(true)}
+            className="bg-[var(--comic-purple)] text-white px-6 py-3 border-2 border-black font-bold hover:bg-purple-700 transition"
+          >
+            Add a brand
+          </button>
+        </motion.div>
+      )}
 
       {/* Add/Edit Form Modal */}
       <AnimatePresence>
@@ -195,7 +156,7 @@ export default function BrandsPage() {
                       });
                     }}
                     placeholder="e.g., Nike"
-                    className="w-full px-4 py-3 border-2 border-black focus:outline-none focus:ring-2 focus:ring-[--comic-purple] font-bold"
+                    className="w-full px-4 py-3 border-2 border-black focus:outline-none focus:ring-2 focus:ring-[var(--comic-purple)] font-bold"
                   />
                 </div>
 
@@ -208,7 +169,7 @@ export default function BrandsPage() {
                       setFormData({ ...formData, slug: e.target.value })
                     }
                     placeholder="e.g., nike"
-                    className="w-full px-4 py-3 border-2 border-black focus:outline-none focus:ring-2 focus:ring-[--comic-purple] font-bold"
+                    className="w-full px-4 py-3 border-2 border-black focus:outline-none focus:ring-2 focus:ring-[var(--comic-purple)] font-bold"
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     URL-friendly version (auto-generated)
@@ -224,7 +185,7 @@ export default function BrandsPage() {
                     }
                     rows={3}
                     placeholder="Brief description of the brand..."
-                    className="w-full px-4 py-3 border-2 border-black focus:outline-none focus:ring-2 focus:ring-[--comic-purple] font-bold resize-none"
+                    className="w-full px-4 py-3 border-2 border-black focus:outline-none focus:ring-2 focus:ring-[var(--comic-purple)] font-bold resize-none"
                   />
                 </div>
 
@@ -253,7 +214,7 @@ export default function BrandsPage() {
                 <button
                   onClick={handleSave}
                   disabled={!formData.name || !formData.slug}
-                  className="flex-1 px-6 py-3 bg-[--comic-green] text-white border-2 border-black font-bold hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 px-6 py-3 bg-[var(--comic-green)] text-white border-2 border-black font-bold hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   <Save size={20} />
                   {editingBrand ? "UPDATE" : "CREATE"}
@@ -276,7 +237,7 @@ export default function BrandsPage() {
           >
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-gradient-to-br from-[--comic-red] to-[--comic-purple] border-2 border-black">
+                <div className="p-3 bg-gradient-to-br from-[var(--comic-red)] to-[var(--comic-purple)] border-2 border-black">
                   <Tag size={24} className="text-white" />
                 </div>
                 <div>
@@ -311,14 +272,14 @@ export default function BrandsPage() {
             <div className="flex gap-2">
               <button
                 onClick={() => handleEdit(brand)}
-                className="flex-1 p-3 bg-[--comic-purple] text-white border-2 border-black font-bold hover:bg-purple-700 transition flex items-center justify-center gap-2"
+                className="flex-1 p-3 bg-[var(--comic-purple)] text-white border-2 border-black font-bold hover:bg-purple-700 transition flex items-center justify-center gap-2"
               >
                 <Edit size={16} />
                 EDIT
               </button>
               <button
                 onClick={() => setDeleteModal(brand.id)}
-                className="flex-1 p-3 bg-[--comic-red] text-white border-2 border-black font-bold hover:bg-red-600 transition flex items-center justify-center gap-2"
+                className="flex-1 p-3 bg-[var(--comic-red)] text-white border-2 border-black font-bold hover:bg-red-600 transition flex items-center justify-center gap-2"
               >
                 <Trash2 size={16} />
                 DELETE
@@ -359,7 +320,7 @@ export default function BrandsPage() {
                 </button>
                 <button
                   onClick={() => handleDelete(deleteModal)}
-                  className="flex-1 px-6 py-3 bg-[--comic-red] text-white border-2 border-black font-bold hover:bg-red-600 transition"
+                  className="flex-1 px-6 py-3 bg-[var(--comic-red)] text-white border-2 border-black font-bold hover:bg-red-600 transition"
                 >
                   DELETE
                 </button>

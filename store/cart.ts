@@ -8,12 +8,14 @@ export interface CartItem {
   price: number;
   image: string;
   slug: string;
+  reservedUntil?: string | null;
 }
 
 interface CartStore {
   items: CartItem[];
   addItem: (item: CartItem) => void;
   removeItem: (id: string) => void;
+  updateReservation: (id: string, reservedUntil: string | null) => void;
   clearCart: () => void;
   getTotal: () => number;
   getItemCount: () => number;
@@ -36,6 +38,14 @@ export const useCartStore = create<CartStore>((set, get) => ({
   removeItem: (id) => {
     set((state) => ({
       items: state.items.filter((item) => item.id !== id),
+    }));
+  },
+
+  updateReservation: (id, reservedUntil) => {
+    set((state) => ({
+      items: state.items.map((item) =>
+        item.id === id ? { ...item, reservedUntil } : item
+      ),
     }));
   },
 

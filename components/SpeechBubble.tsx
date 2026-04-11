@@ -15,10 +15,10 @@ export default function SpeechBubble({
   className,
 }: SpeechBubbleProps) {
   const colors = {
-    pow: "bg-[--comic-red] text-white",
-    zap: "bg-[--comic-purple] text-white",
+    pow: "bg-[var(--comic-red)] text-white",
+    zap: "bg-[var(--comic-purple)] text-white",
     boom: "bg-yellow-300 text-black",
-    bam: "bg-[--goblin-green] text-white",
+    bam: "bg-[var(--goblin-green)] text-white",
   };
 
   const rotations = {

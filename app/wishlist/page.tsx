@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Heart, Trash2, ShoppingCart } from "lucide-react";
@@ -11,20 +10,21 @@ import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useAuth } from "@/components/AuthProvider";
 
 export default function WishlistPage() {
-  const { data: session, status } = useSession();
+  const { session, loading } = useAuth();
   const router = useRouter();
   const { items, removeItem } = useWishlist();
   const addToCart = useCartStore((state) => state.addItem);
 
   useEffect(() => {
-    if (status === "unauthenticated") {
+    if (!loading && !session) {
       router.push("/auth/signin");
     }
-  }, [status, router]);
+  }, [loading, session, router]);
 
-  if (status === "loading") {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-bounce font-heading text-4xl">LOADING...</div>
@@ -49,7 +49,7 @@ export default function WishlistPage() {
       <Navbar />
       <div className="min-h-screen bg-white">
         {/* Header */}
-        <div className="bg-gradient-to-r from-[--comic-red] to-[--comic-purple] border-b-4 border-black p-6">
+        <div className="bg-gradient-to-r from-[var(--comic-red)] to-[var(--comic-purple)] border-b-4 border-black p-6">
           <div className="max-w-7xl mx-auto">
             <h1 className="font-heading text-5xl text-white mb-2 flex items-center gap-3">
               <Heart size={48} fill="white" />
@@ -75,7 +75,7 @@ export default function WishlistPage() {
               Start adding products you love!
             </p>
             <Link href="/shop">
-              <button className="bg-[--comic-purple] text-white px-8 py-4 border-4 border-black shadow-hard font-heading text-xl hover:scale-105 transition">
+              <button className="bg-[var(--comic-purple)] text-white px-8 py-4 border-4 border-black shadow-hard font-heading text-xl hover:scale-105 transition">
                 BROWSE PRODUCTS
               </button>
             </Link>
@@ -153,14 +153,14 @@ export default function WishlistPage() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleAddToCart(item)}
-                      className="flex-1 bg-[--comic-green] text-white px-4 py-3 border-2 border-black font-bold hover:bg-green-600 transition flex items-center justify-center gap-2"
+                      className="flex-1 bg-[var(--comic-green)] text-white px-4 py-3 border-2 border-black font-bold hover:bg-green-600 transition flex items-center justify-center gap-2"
                     >
                       <ShoppingCart size={18} />
                       ADD TO CART
                     </button>
                     <button
                       onClick={() => removeItem(item.id)}
-                      className="p-3 bg-[--comic-red] text-white border-2 border-black hover:bg-red-600 transition"
+                      className="p-3 bg-[var(--comic-red)] text-white border-2 border-black hover:bg-red-600 transition"
                     >
                       <Trash2 size={18} />
                     </button>

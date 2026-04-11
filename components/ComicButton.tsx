@@ -26,9 +26,9 @@ export default function ComicButton({
     "font-heading uppercase tracking-wide border-4 border-black transition-all duration-75 cursor-pointer";
 
   const variantStyles = {
-    primary: "bg-[--comic-red] text-white hover:bg-red-600 shadow-hard",
+    primary: "bg-[var(--comic-red)] text-white hover:bg-red-600 shadow-hard",
     secondary: "bg-white text-black hover:bg-gray-100 shadow-hard",
-    danger: "bg-[--comic-purple] text-white hover:bg-purple-700 shadow-hard",
+    danger: "bg-[var(--comic-purple)] text-white hover:bg-purple-700 shadow-hard",
   };
 
   const sizeStyles = {

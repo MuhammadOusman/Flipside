@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Users,
   Eye,
@@ -10,7 +10,6 @@ import {
   ShoppingCart,
   CreditCard,
   BarChart3,
-  Calendar,
 } from "lucide-react";
 import { useAnalytics } from "@/store/analytics";
 import {
@@ -18,8 +17,6 @@ import {
   Line,
   BarChart,
   Bar,
-  PieChart,
-  Pie,
   Cell,
   XAxis,
   YAxis,
@@ -33,87 +30,155 @@ const COLORS = ["#FF3333", "#6A0DAD", "#50C878", "#FBBF24", "#3B82F6"];
 
 export default function AnalyticsPage() {
   const analytics = useAnalytics();
-  const [data, setData] = useState<any>(null);
+  const data = useMemo(() => analytics.getAnalytics(), [analytics]);
   const [timeRange, setTimeRange] = useState<"today" | "week" | "month">("week");
 
-  useEffect(() => {
-    setData(analytics.getAnalytics());
-  }, []);
+  const hasAnalytics = data.totalEvents > 0;
 
-  // Mock traffic data for charts
-  const trafficData = [
-    { date: "Mon", visits: 245, pageViews: 892, uniqueVisitors: 189 },
-    { date: "Tue", visits: 312, pageViews: 1024, uniqueVisitors: 245 },
-    { date: "Wed", visits: 289, pageViews: 956, uniqueVisitors: 223 },
-    { date: "Thu", visits: 401, pageViews: 1342, uniqueVisitors: 312 },
-    { date: "Fri", visits: 478, pageViews: 1589, uniqueVisitors: 389 },
-    { date: "Sat", visits: 523, pageViews: 1823, uniqueVisitors: 456 },
-    { date: "Sun", visits: 445, pageViews: 1467, uniqueVisitors: 378 },
-  ];
+  const pageViewEvents = useMemo(
+    () => analytics.events.filter((event) => event.type === "page_view"),
+    [analytics.events]
+  );
 
-  const deviceData = [
-    { name: "Mobile", value: 65 },
-    { name: "Desktop", value: 28 },
-    { name: "Tablet", value: 7 },
-  ];
+  const cartAddEvents = useMemo(
+    () => analytics.events.filter((event) => event.type === "cart_add"),
+    [analytics.events]
+  );
 
-  const topPagesData = [
-    { page: "Homepage", views: 3245, percentage: 32 },
-    { page: "Shop", views: 2156, percentage: 21 },
-    { page: "Product Pages", views: 1834, percentage: 18 },
-    { page: "Checkout", views: 945, percentage: 9 },
-    { page: "About", views: 734, percentage: 7 },
-  ];
+  const checkoutEvents = useMemo(
+    () => analytics.events.filter((event) => event.type === "checkout_start"),
+    [analytics.events]
+  );
 
-  const conversionData = [
-    { stage: "Visits", count: 5234 },
-    { stage: "Product Views", count: 3421 },
-    { stage: "Add to Cart", count: 1567 },
-    { stage: "Checkout", count: 945 },
-    { stage: "Purchase", count: 623 },
-  ];
+  const purchaseEvents = useMemo(
+    () => analytics.events.filter((event) => event.type === "purchase"),
+    [analytics.events]
+  );
+
+  const trafficData = useMemo(() => {
+    const now = Date.now();
+    const dayMs = 24 * 60 * 60 * 1000;
+    const formatDay = (timestamp: number) =>
+      new Date(timestamp).toLocaleDateString("en-US", { weekday: "short" });
+
+    const bucketMap = new Map<string, { date: string; visits: number; pageViews: number; uniqueVisitors: number; visitors: Set<string> }>();
+    for (let i = 6; i >= 0; i--) {
+      const ts = now - i * dayMs;
+      const date = formatDay(ts);
+      bucketMap.set(date, {
+        date,
+        visits: 0,
+        pageViews: 0,
+        uniqueVisitors: 0,
+        visitors: new Set(),
+      });
+    }
+
+    pageViewEvents.forEach((event) => {
+      const day = formatDay(event.timestamp);
+      const bucket = bucketMap.get(day);
+      if (!bucket) return;
+
+      bucket.visits += 1;
+      bucket.pageViews += 1;
+      const visitorId = String(event.data?.visitorId || "unknown");
+      bucket.visitors.add(visitorId);
+    });
+
+    return Array.from(bucketMap.values()).map((bucket) => ({
+      date: bucket.date,
+      visits: bucket.visits,
+      pageViews: bucket.pageViews,
+      uniqueVisitors: bucket.visitors.size,
+    }));
+  }, [pageViewEvents]);
+
+  const topPagesData = useMemo(
+    () =>
+      data.topPages.map(([page, views]) => ({
+        page,
+        views,
+        percentage:
+          data.totalPageViews > 0
+            ? Math.round((views / data.totalPageViews) * 100)
+            : 0,
+      })),
+    [data.topPages, data.totalPageViews]
+  );
+
+  const conversionData = useMemo(
+    () => [
+      { stage: "Visits", count: data.totalPageViews },
+      { stage: "Product Views", count: data.totalProductViews },
+      { stage: "Add to Cart", count: cartAddEvents.length },
+      { stage: "Checkout", count: checkoutEvents.length },
+      { stage: "Purchase", count: purchaseEvents.length },
+    ],
+    [data.totalPageViews, data.totalProductViews, cartAddEvents.length, checkoutEvents.length, purchaseEvents.length]
+  );
+
+  const recentActivity = useMemo(() => {
+    const now = Date.now();
+    const tenMinutes = 10 * 60 * 1000;
+    const recent = analytics.events.filter((event) => now - event.timestamp < tenMinutes);
+    const activeUsers = new Set(
+      recent
+        .filter((event) => event.data?.visitorId)
+        .map((event) => String(event.data?.visitorId))
+    ).size;
+    const pageViewsPerMin = Math.round(
+      (recent.filter((event) => event.type === "page_view").length / 10) * 100
+    ) / 100;
+
+    return {
+      activeUsers,
+      pagesPerMin,
+      activeCarts: recent.filter((event) => event.type === "cart_add").length,
+      avgSession: "n/a",
+    };
+  }, [analytics.events]);
 
   const stats = [
     {
       icon: Eye,
       label: "Page Views",
-      value: data?.totalPageViews || "10.2K",
-      change: "+23% vs last week",
+      value: data.totalPageViews,
+      change: hasAnalytics ? `${data.todayViews} today` : "No data yet",
       color: "bg-blue-500",
     },
     {
       icon: Users,
       label: "Unique Visitors",
-      value: data?.totalVisitors || "3,421",
-      change: "+15% vs last week",
+      value: data.totalVisitors,
+      change: hasAnalytics ? `${data.returningVisitors} returning` : "No data yet",
       color: "bg-green-500",
     },
     {
       icon: MousePointerClick,
-      label: "Total Clicks",
-      value: "18.9K",
-      change: "+18% vs last week",
+      label: "Product Views",
+      value: data.totalProductViews,
+      change: hasAnalytics ? `${cartAddEvents.length} cart adds` : "No data yet",
       color: "bg-purple-500",
     },
     {
-      icon: TrendingUp,
-      label: "Bounce Rate",
-      value: "32.5%",
-      change: "-5% vs last week",
-      color: "bg-orange-500",
-    },
-    {
       icon: ShoppingCart,
-      label: "Cart Additions",
-      value: "1,567",
-      change: "+28% vs last week",
+      label: "Cart Adds",
+      value: cartAddEvents.length,
+      change: hasAnalytics ? "Tracked live" : "No data yet",
       color: "bg-pink-500",
     },
     {
+      icon: TrendingUp,
+      label: "Checkouts",
+      value: checkoutEvents.length,
+      change: hasAnalytics ? "Tracked live" : "No data yet",
+      color: "bg-orange-500",
+    },
+    {
       icon: CreditCard,
-      label: "Conversions",
-      value: "623",
-      change: "+31% vs last week",
+      label: "Purchases",
+      value: purchaseEvents.length,
+      change: hasAnalytics ? "Tracked live" : "No data yet",
       color: "bg-red-500",
     },
   ];
@@ -133,7 +198,7 @@ export default function AnalyticsPage() {
             onClick={() => setTimeRange("today")}
             className={`px-4 py-2 border-2 border-black font-bold transition ${
               timeRange === "today"
-                ? "bg-[--comic-purple] text-white"
+                ? "bg-[var(--comic-purple)] text-white"
                 : "bg-white hover:bg-gray-100"
             }`}
           >
@@ -143,7 +208,7 @@ export default function AnalyticsPage() {
             onClick={() => setTimeRange("week")}
             className={`px-4 py-2 border-2 border-black font-bold transition ${
               timeRange === "week"
-                ? "bg-[--comic-purple] text-white"
+                ? "bg-[var(--comic-purple)] text-white"
                 : "bg-white hover:bg-gray-100"
             }`}
           >
@@ -153,7 +218,7 @@ export default function AnalyticsPage() {
             onClick={() => setTimeRange("month")}
             className={`px-4 py-2 border-2 border-black font-bold transition ${
               timeRange === "month"
-                ? "bg-[--comic-purple] text-white"
+                ? "bg-[var(--comic-purple)] text-white"
                 : "bg-white hover:bg-gray-100"
             }`}
           >
@@ -189,197 +254,177 @@ export default function AnalyticsPage() {
         })}
       </div>
 
-      {/* Traffic Chart */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white border-4 border-black shadow-hard p-6"
-      >
-        <div className="flex items-center gap-3 mb-6">
-          <BarChart3 size={24} className="text-[--comic-purple]" />
-          <h2 className="font-heading text-2xl">TRAFFIC OVERVIEW</h2>
-        </div>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={trafficData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#000" />
-            <XAxis dataKey="date" stroke="#000" />
-            <YAxis stroke="#000" />
-            <Tooltip
-              contentStyle={{
-                border: "2px solid black",
-                borderRadius: 0,
-                fontWeight: "bold",
-              }}
-            />
-            <Legend />
-            <Line
-              type="monotone"
-              dataKey="pageViews"
-              stroke="#FF3333"
-              strokeWidth={3}
-              name="Page Views"
-            />
-            <Line
-              type="monotone"
-              dataKey="uniqueVisitors"
-              stroke="#6A0DAD"
-              strokeWidth={3}
-              name="Unique Visitors"
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </motion.div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Device Distribution */}
+      {!hasAnalytics ? (
         <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="bg-white border-4 border-black shadow-hard p-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-yellow-50 border-4 border-black shadow-hard p-6"
         >
-          <h2 className="font-heading text-2xl mb-6">DEVICE BREAKDOWN</h2>
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
-              <Pie
-                data={deviceData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={(entry: any) =>
-                  `${entry.name} ${((entry.percent || 0) * 100).toFixed(0)}%`
-                }
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-                stroke="#000"
-                strokeWidth={2}
-              >
-                {deviceData.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={COLORS[index % COLORS.length]}
-                  />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{
-                  border: "2px solid black",
-                  borderRadius: 0,
-                  fontWeight: "bold",
-                }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+          <h2 className="font-heading text-3xl mb-3">No analytics data yet</h2>
+          <p className="text-gray-700 font-bold mb-4">
+            Browse the storefront and interact with products to populate analytics charts. This page now reflects real event data instead of dummy values.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white border-2 border-black p-4">
+              <p className="text-sm font-bold text-gray-600 mb-1">Page Views</p>
+              <p className="font-heading text-3xl">0</p>
+            </div>
+            <div className="bg-white border-2 border-black p-4">
+              <p className="text-sm font-bold text-gray-600 mb-1">Unique Visitors</p>
+              <p className="font-heading text-3xl">0</p>
+            </div>
+          </div>
         </motion.div>
+      ) : (
+        <>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white border-4 border-black shadow-hard p-6"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <BarChart3 size={24} className="text-[var(--comic-purple)]" />
+              <h2 className="font-heading text-2xl">TRAFFIC OVERVIEW</h2>
+            </div>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={trafficData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#000" />
+                <XAxis dataKey="date" stroke="#000" />
+                <YAxis stroke="#000" />
+                <Tooltip
+                  contentStyle={{
+                    border: "2px solid black",
+                    borderRadius: 0,
+                    fontWeight: "bold",
+                  }}
+                />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="pageViews"
+                  stroke="#FF3333"
+                  strokeWidth={3}
+                  name="Page Views"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="uniqueVisitors"
+                  stroke="#6A0DAD"
+                  strokeWidth={3}
+                  name="Unique Visitors"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </motion.div>
 
-        {/* Top Pages */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="bg-white border-4 border-black shadow-hard p-6"
-        >
-          <h2 className="font-heading text-2xl mb-6">TOP PAGES</h2>
-          <div className="space-y-4">
-            {topPagesData.map((page, index) => (
-              <div key={page.page} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-sm">{page.page}</span>
-                  <span className="font-bold text-sm">{page.views} views</span>
-                </div>
-                <div className="w-full h-3 bg-gray-200 border-2 border-black">
-                  <div
-                    className="h-full"
-                    style={{
-                      width: `${page.percentage}%`,
-                      background: COLORS[index % COLORS.length],
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="bg-white border-4 border-black shadow-hard p-6"
+            >
+              <h2 className="font-heading text-2xl mb-6">TOP PAGES</h2>
+              <div className="space-y-4">
+                {topPagesData.map((page, index) => (
+                  <div key={page.page} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-sm">{page.page}</span>
+                      <span className="font-bold text-sm">{page.views} views</span>
+                    </div>
+                    <div className="w-full h-3 bg-gray-200 border-2 border-black">
+                      <div
+                        className="h-full"
+                        style={{
+                          width: `${page.percentage}%`,
+                          background: COLORS[index % COLORS.length],
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="bg-white border-4 border-black shadow-hard p-6"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <TrendingUp size={24} className="text-[var(--comic-green)]" />
+                <h2 className="font-heading text-2xl">CONVERSION FUNNEL</h2>
+              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={conversionData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#000" />
+                  <XAxis dataKey="stage" stroke="#000" />
+                  <YAxis stroke="#000" />
+                  <Tooltip
+                    contentStyle={{
+                      border: "2px solid black",
+                      borderRadius: 0,
+                      fontWeight: "bold",
                     }}
                   />
-                </div>
+                  <Bar dataKey="count" fill="#50C878" stroke="#000" strokeWidth={2}>
+                    {conversionData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="mt-4 p-4 bg-green-50 border-2 border-black">
+                <p className="font-bold text-sm mb-1">CONVERSION TREND</p>
+                <p className="font-heading text-4xl text-[var(--comic-green)]">
+                  {conversionData.length > 0 ? `${Math.round((purchaseEvents.length / Math.max(data.totalPageViews, 1)) * 100)}%` : "0%"}
+                </p>
+                <p className="text-xs text-gray-600 font-bold mt-1">
+                  {purchaseEvents.length} purchases from {data.totalPageViews} page views
+                </p>
               </div>
-            ))}
+            </motion.div>
           </div>
-        </motion.div>
-      </div>
 
-      {/* Conversion Funnel */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white border-4 border-black shadow-hard p-6"
-      >
-        <div className="flex items-center gap-3 mb-6">
-          <TrendingUp size={24} className="text-[--comic-green]" />
-          <h2 className="font-heading text-2xl">CONVERSION FUNNEL</h2>
-        </div>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={conversionData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#000" />
-            <XAxis dataKey="stage" stroke="#000" />
-            <YAxis stroke="#000" />
-            <Tooltip
-              contentStyle={{
-                border: "2px solid black",
-                borderRadius: 0,
-                fontWeight: "bold",
-              }}
-            />
-            <Bar dataKey="count" fill="#50C878" stroke="#000" strokeWidth={2}>
-              {conversionData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-        <div className="mt-4 p-4 bg-green-50 border-2 border-black">
-          <p className="font-bold text-sm mb-1">CONVERSION RATE</p>
-          <p className="font-heading text-4xl text-[--comic-green]">
-            11.9%
-          </p>
-          <p className="text-xs text-gray-600 font-bold mt-1">
-            623 purchases from 5,234 visitors
-          </p>
-        </div>
-      </motion.div>
-
-      {/* Real-time Activity */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-r from-[--comic-red] to-[--comic-purple] border-4 border-black shadow-hard p-6"
-      >
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse" />
-          <h2 className="font-heading text-2xl text-white">
-            REAL-TIME ACTIVITY
-          </h2>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white border-2 border-black p-4">
-            <p className="text-sm font-bold text-gray-600 mb-1">
-              ACTIVE USERS
-            </p>
-            <p className="font-heading text-3xl">47</p>
-          </div>
-          <div className="bg-white border-2 border-black p-4">
-            <p className="text-sm font-bold text-gray-600 mb-1">
-              PAGES/MIN
-            </p>
-            <p className="font-heading text-3xl">128</p>
-          </div>
-          <div className="bg-white border-2 border-black p-4">
-            <p className="text-sm font-bold text-gray-600 mb-1">
-              AVG. SESSION
-            </p>
-            <p className="font-heading text-3xl">4:23</p>
-          </div>
-          <div className="bg-white border-2 border-black p-4">
-            <p className="text-sm font-bold text-gray-600 mb-1">
-              ACTIVE CARTS
-            </p>
-            <p className="font-heading text-3xl">12</p>
-          </div>
-        </div>
-      </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-r from-[var(--comic-red)] to-[var(--comic-purple)] border-4 border-black shadow-hard p-6"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse" />
+              <h2 className="font-heading text-2xl text-white">
+                REAL-TIME ACTIVITY
+              </h2>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-white border-2 border-black p-4">
+                <p className="text-sm font-bold text-gray-600 mb-1">
+                  ACTIVE USERS
+                </p>
+                <p className="font-heading text-3xl">{recentActivity.activeUsers}</p>
+              </div>
+              <div className="bg-white border-2 border-black p-4">
+                <p className="text-sm font-bold text-gray-600 mb-1">
+                  PAGES/MIN
+                </p>
+                <p className="font-heading text-3xl">{recentActivity.pagesPerMin}</p>
+              </div>
+              <div className="bg-white border-2 border-black p-4">
+                <p className="text-sm font-bold text-gray-600 mb-1">
+                  AVG. SESSION
+                </p>
+                <p className="font-heading text-3xl">{recentActivity.avgSession}</p>
+              </div>
+              <div className="bg-white border-2 border-black p-4">
+                <p className="text-sm font-bold text-gray-600 mb-1">
+                  ACTIVE CARTS
+                </p>
+                <p className="font-heading text-3xl">{recentActivity.activeCarts}</p>
+              </div>
+            </div>
+          </motion.div>
+        </>
+      )}
     </div>
   );
 }

@@ -1,27 +1,18 @@
-import NextAuth from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
+import { NextResponse } from "next/server";
 
-export const authOptions = {
-  providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-  ],
-  pages: {
-    signIn: "/auth/signin",
-  },
-  callbacks: {
-    async session({ session, token }: any) {
-      if (session?.user) {
-        session.user.id = token.sub;
-      }
-      return session;
+function disabledAuthResponse() {
+  return NextResponse.json(
+    {
+      error: "NextAuth route is disabled. Use Supabase auth endpoints.",
     },
-  },
-  secret: process.env.NEXTAUTH_SECRET,
-};
+    { status: 410 }
+  );
+}
 
-const handler = NextAuth(authOptions);
+export function GET() {
+  return disabledAuthResponse();
+}
 
-export { handler as GET, handler as POST };
+export function POST() {
+  return disabledAuthResponse();
+}

@@ -6,7 +6,22 @@ type AnalyticsEvent = {
   id: string;
   type: "page_view" | "product_view" | "cart_add" | "checkout_start" | "purchase";
   timestamp: number;
-  data?: any;
+  data?: Record<string, unknown>;
+};
+
+type AnalyticsSummary = {
+  totalEvents: number;
+  totalPageViews: number;
+  totalProductViews: number;
+  totalVisitors: number;
+  returningVisitors: number;
+  todayViews: number;
+  weekViews: number;
+  monthViews: number;
+  pageViews: Record<string, number>;
+  productViews: Record<string, number>;
+  topPages: Array<[string, number]>;
+  topProducts: Array<[string, number]>;
 };
 
 type AnalyticsStore = {
@@ -22,7 +37,7 @@ type AnalyticsStore = {
   trackCartAdd: (productId: string) => void;
   trackCheckoutStart: () => void;
   trackPurchase: (amount: number) => void;
-  getAnalytics: () => any;
+  getAnalytics: () => AnalyticsSummary;
   clearAnalytics: () => void;
 };
 
@@ -174,16 +189,17 @@ export const useAnalytics = create<AnalyticsStore>()(
     {
       name: "flipside-analytics",
       version: 1, // Add version for migration
-      migrate: (persistedState: any, version: number) => {
+      migrate: (persistedState: unknown) => {
         // Handle migration from Set to Array
-        if (persistedState && persistedState.returningVisitors) {
+        if (persistedState && typeof persistedState === "object" && "returningVisitors" in persistedState) {
+          const state = persistedState as { returningVisitors?: unknown };
           // If it's an object (serialized Set), convert to array
-          if (typeof persistedState.returningVisitors === 'object' && 
-              !Array.isArray(persistedState.returningVisitors)) {
-            persistedState.returningVisitors = [];
+          if (typeof state.returningVisitors === "object" && !Array.isArray(state.returningVisitors)) {
+            state.returningVisitors = [];
           }
+          return state as AnalyticsStore;
         }
-        return persistedState as AnalyticsStore;
+        return (persistedState || {}) as AnalyticsStore;
       },
     }
   )

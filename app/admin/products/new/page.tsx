@@ -1,341 +1,252 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { useState, useCallback } from "react";
-import { Upload, X, Image as ImageIcon } from "lucide-react";
+import { useMemo, useState, useTransition } from "react";
+import { createProductAction } from "@/app/actions/admin";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
-type UploadedImage = {
-  id: string;
-  file: File;
-  preview: string;
-};
+const productStatuses = ["draft", "dropping_soon", "available", "archived"] as const;
+
+function slugify(input: string) {
+  return input
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "");
+}
 
 export default function NewProductPage() {
-  const [images, setImages] = useState<UploadedImage[]>([]);
-  const [isDragging, setIsDragging] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const [form, setForm] = useState({
     brand: "",
-    size: "",
-    price: "",
-    condition: "95",
-    stock: "1",
-    description: "",
+    model: "",
+    slug: "",
+    sizeUk: "9",
+    sizeEur: "42",
+    conditionGrade: "9/10",
+    flaws: "",
+    price: "45000",
+    sourcingCost: "26000",
+    status: "available",
+    dropTime: "",
+    videoFile: null as File | null,
+    imageFiles: [] as File[],
   });
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
+  const inferredSlug = useMemo(() => slugify(`${form.brand}-${form.model}`), [form.brand, form.model]);
+
+  async function uploadProductAssets() {
+    const supabase = getSupabaseBrowserClient();
+    const imageUrls: string[] = [];
+
+    for (const file of form.imageFiles) {
+      const fileName = `${Date.now()}-${file.name.replace(/\s+/g, "-")}`;
+      const { error: uploadErr } = await supabase.storage
+        .from("product-media")
+        .upload(fileName, file, { upsert: false });
+
+      if (uploadErr) {
+        throw new Error(uploadErr.message);
+      }
+
+      const { data } = supabase.storage.from("product-media").getPublicUrl(fileName);
+      imageUrls.push(data.publicUrl);
+    }
+
+    let videoUrl = "";
+    if (form.videoFile) {
+      const fileName = `${Date.now()}-${form.videoFile.name.replace(/\s+/g, "-")}`;
+      const { error: uploadErr } = await supabase.storage
+        .from("product-media")
+        .upload(fileName, form.videoFile, { upsert: false });
+
+      if (uploadErr) {
+        throw new Error(uploadErr.message);
+      }
+
+      const { data } = supabase.storage.from("product-media").getPublicUrl(fileName);
+      videoUrl = data.publicUrl;
+    }
+
+    return { imageUrls, videoUrl };
+  }
+
+  const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsDragging(true);
-  }, []);
+    setError(null);
+    setSuccess(null);
 
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  }, []);
+    startTransition(async () => {
+      try {
+        const { imageUrls, videoUrl } = await uploadProductAssets();
+        const result = await createProductAction({
+          slug: form.slug || inferredSlug,
+          brand: form.brand,
+          model: form.model,
+          sizeUk: Number(form.sizeUk),
+          sizeEur: Number(form.sizeEur),
+          conditionGrade: form.conditionGrade,
+          flaws: form.flaws
+            .split(",")
+            .map((value) => value.trim())
+            .filter(Boolean),
+          images: imageUrls,
+          videoUrl: videoUrl || undefined,
+          price: Number(form.price),
+          sourcingCost: Number(form.sourcingCost),
+          status: form.status as "draft" | "dropping_soon" | "available" | "reserved" | "sold" | "archived",
+          dropTime: form.dropTime || undefined,
+        });
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
+        if (!result.ok) {
+          setError(result.message || "Failed to create product");
+          return;
+        }
 
-    const files = Array.from(e.dataTransfer.files).filter((file) =>
-      file.type.startsWith("image/")
-    );
-
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setImages((prev) => [
-          ...prev,
-          {
-            id: Math.random().toString(36).substr(2, 9),
-            file,
-            preview: reader.result as string,
-          },
-        ]);
-      };
-      reader.readAsDataURL(file);
+        setSuccess("Product created successfully.");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Upload failed");
+      }
     });
-  }, []);
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setImages((prev) => [
-          ...prev,
-          {
-            id: Math.random().toString(36).substr(2, 9),
-            file,
-            preview: reader.result as string,
-          },
-        ]);
-      };
-      reader.readAsDataURL(file);
-    });
-  };
-
-  const removeImage = (id: string) => {
-    setImages(images.filter((img) => img.id !== id));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Form Data:", formData);
-    console.log("Images:", images);
-    alert("Product created! (This is a demo - connect to Sanity for real functionality)");
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
-        <h1 className="font-heading text-4xl mb-2">ADD NEW PRODUCT</h1>
-        <p className="text-gray-600 font-bold">
-          Upload product details and images
-        </p>
+        <h1 className="font-heading text-4xl">ADD NEW PRODUCT</h1>
+        <p className="font-bold text-gray-600">Create inventory with 1-of-1 anti-snipe support.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Image Upload Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white border-4 border-black shadow-hard p-6"
-        >
-          <h2 className="font-heading text-2xl mb-4 flex items-center gap-2">
-            <ImageIcon size={24} />
-            PRODUCT IMAGES
-          </h2>
+      {error && <div className="border-2 border-black bg-red-100 p-3 font-bold text-red-700">{error}</div>}
+      {success && <div className="border-2 border-black bg-green-100 p-3 font-bold text-green-700">{success}</div>}
 
-          {/* Drag & Drop Area */}
-          <div
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            className={`border-4 border-dashed ${
-              isDragging
-                ? "border-[--comic-purple] bg-purple-50"
-                : "border-gray-300"
-            } p-12 text-center transition`}
+      <form onSubmit={onSubmit} className="space-y-4 border-4 border-black bg-white p-6 shadow-hard">
+        <div className="grid gap-4 md:grid-cols-2">
+          <input
+            className="border-2 border-black p-3"
+            placeholder="Brand"
+            value={form.brand}
+            onChange={(e) => setForm((s) => ({ ...s, brand: e.target.value }))}
+            required
+          />
+          <input
+            className="border-2 border-black p-3"
+            placeholder="Model"
+            value={form.model}
+            onChange={(e) => setForm((s) => ({ ...s, model: e.target.value }))}
+            required
+          />
+
+          <input
+            className="border-2 border-black p-3"
+            placeholder={`Slug (auto: ${inferredSlug})`}
+            value={form.slug}
+            onChange={(e) => setForm((s) => ({ ...s, slug: e.target.value }))}
+          />
+          <input
+            className="border-2 border-black p-3"
+            placeholder="Condition grade (e.g. 9/10)"
+            value={form.conditionGrade}
+            onChange={(e) => setForm((s) => ({ ...s, conditionGrade: e.target.value }))}
+            required
+          />
+
+          <input
+            type="number"
+            step="0.5"
+            className="border-2 border-black p-3"
+            placeholder="Size UK"
+            value={form.sizeUk}
+            onChange={(e) => setForm((s) => ({ ...s, sizeUk: e.target.value }))}
+            required
+          />
+          <input
+            type="number"
+            step="0.5"
+            className="border-2 border-black p-3"
+            placeholder="Size EUR"
+            value={form.sizeEur}
+            onChange={(e) => setForm((s) => ({ ...s, sizeEur: e.target.value }))}
+            required
+          />
+
+          <input
+            type="number"
+            className="border-2 border-black p-3"
+            placeholder="Price"
+            value={form.price}
+            onChange={(e) => setForm((s) => ({ ...s, price: e.target.value }))}
+            required
+          />
+          <input
+            type="number"
+            className="border-2 border-black p-3"
+            placeholder="Sourcing Cost"
+            value={form.sourcingCost}
+            onChange={(e) => setForm((s) => ({ ...s, sourcingCost: e.target.value }))}
+            required
+          />
+
+          <select
+            className="border-2 border-black p-3"
+            value={form.status}
+            onChange={(e) => setForm((s) => ({ ...s, status: e.target.value }))}
           >
-            <Upload
-              size={48}
-              className={`mx-auto mb-4 ${
-                isDragging ? "text-[--comic-purple]" : "text-gray-400"
-              }`}
+            {productStatuses.map((status) => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
+          </select>
+
+          <input
+            type="datetime-local"
+            className="border-2 border-black p-3"
+            value={form.dropTime}
+            onChange={(e) => setForm((s) => ({ ...s, dropTime: e.target.value }))}
+          />
+        </div>
+
+        <textarea
+          className="w-full border-2 border-black p-3"
+          placeholder="Flaws (comma-separated): No Box, Heel Drag"
+          value={form.flaws}
+          onChange={(e) => setForm((s) => ({ ...s, flaws: e.target.value }))}
+        />
+
+        <div className="grid gap-3 md:grid-cols-2">
+          <label className="border-2 border-dashed border-black p-3 font-bold">
+            Product Images
+            <input
+              className="mt-2 w-full"
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(e) => setForm((s) => ({ ...s, imageFiles: Array.from(e.target.files || []) }))}
+              required
             />
-            <p className="font-heading text-2xl mb-2">
-              {isDragging ? "DROP IMAGES HERE!" : "DRAG & DROP IMAGES"}
-            </p>
-            <p className="text-gray-600 font-bold mb-4">or</p>
-            <label className="inline-block">
-              <input
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-              <span className="bg-[--comic-purple] text-white px-6 py-3 border-2 border-black font-bold cursor-pointer hover:bg-purple-700 transition inline-block">
-                BROWSE FILES
-              </span>
-            </label>
-          </div>
+          </label>
 
-          {/* Image Previews */}
-          {images.length > 0 && (
-            <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-              {images.map((image, index) => (
-                <motion.div
-                  key={image.id}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="relative group"
-                >
-                  <div className="aspect-square border-2 border-black overflow-hidden bg-gray-200">
-                    <img
-                      src={image.preview}
-                      alt={`Upload ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removeImage(image.id)}
-                    className="absolute -top-2 -right-2 bg-[--comic-red] text-white p-1 border-2 border-black hover:bg-red-600 transition"
-                  >
-                    <X size={16} />
-                  </button>
-                  {index === 0 && (
-                    <div className="absolute bottom-2 left-2 bg-[--comic-green] text-white px-2 py-1 border border-black text-xs font-bold">
-                      PRIMARY
-                    </div>
-                  )}
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </motion.div>
-
-        {/* Product Details */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white border-4 border-black shadow-hard p-6"
-        >
-          <h2 className="font-heading text-2xl mb-4">PRODUCT DETAILS</h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block font-bold mb-2">Product Name *</label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                placeholder="e.g., Jordan 4 Military Black"
-                className="w-full px-4 py-3 border-2 border-black focus:outline-none focus:ring-2 focus:ring-[--comic-purple] font-bold"
-              />
-            </div>
-
-            <div>
-              <label className="block font-bold mb-2">Brand *</label>
-              <select
-                required
-                value={formData.brand}
-                onChange={(e) =>
-                  setFormData({ ...formData, brand: e.target.value })
-                }
-                className="w-full px-4 py-3 border-2 border-black focus:outline-none focus:ring-2 focus:ring-[--comic-purple] font-bold"
-              >
-                <option value="">Select Brand</option>
-                <option value="Nike">Nike</option>
-                <option value="Adidas">Adidas</option>
-                <option value="New Balance">New Balance</option>
-                <option value="Jordan">Jordan</option>
-                <option value="Yeezy">Yeezy</option>
-                <option value="Converse">Converse</option>
-                <option value="Vans">Vans</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block font-bold mb-2">Size (UK) *</label>
-              <input
-                type="text"
-                required
-                value={formData.size}
-                onChange={(e) =>
-                  setFormData({ ...formData, size: e.target.value })
-                }
-                placeholder="e.g., UK 9"
-                className="w-full px-4 py-3 border-2 border-black focus:outline-none focus:ring-2 focus:ring-[--comic-purple] font-bold"
-              />
-            </div>
-
-            <div>
-              <label className="block font-bold mb-2">Price (PKR) *</label>
-              <input
-                type="number"
-                required
-                value={formData.price}
-                onChange={(e) =>
-                  setFormData({ ...formData, price: e.target.value })
-                }
-                placeholder="e.g., 48000"
-                className="w-full px-4 py-3 border-2 border-black focus:outline-none focus:ring-2 focus:ring-[--comic-purple] font-bold"
-              />
-            </div>
-
-            <div>
-              <label className="block font-bold mb-2">
-                Condition (%) *: {formData.condition}%
-              </label>
-              <input
-                type="range"
-                min="50"
-                max="100"
-                value={formData.condition}
-                onChange={(e) =>
-                  setFormData({ ...formData, condition: e.target.value })
-                }
-                className="w-full h-3 border-2 border-black appearance-none"
-                style={{
-                  background: `linear-gradient(to right, 
-                    ${
-                      parseInt(formData.condition) >= 90
-                        ? "var(--comic-green)"
-                        : parseInt(formData.condition) >= 80
-                        ? "#FBBF24"
-                        : "var(--comic-red)"
-                    } 0%, 
-                    ${
-                      parseInt(formData.condition) >= 90
-                        ? "var(--comic-green)"
-                        : parseInt(formData.condition) >= 80
-                        ? "#FBBF24"
-                        : "var(--comic-red)"
-                    } ${formData.condition}%, 
-                    #E5E7EB ${formData.condition}%, 
-                    #E5E7EB 100%)`,
-                }}
-              />
-            </div>
-
-            <div>
-              <label className="block font-bold mb-2">Stock Quantity *</label>
-              <input
-                type="number"
-                min="0"
-                required
-                value={formData.stock}
-                onChange={(e) =>
-                  setFormData({ ...formData, stock: e.target.value })
-                }
-                className="w-full px-4 py-3 border-2 border-black focus:outline-none focus:ring-2 focus:ring-[--comic-purple] font-bold"
-              />
-            </div>
-          </div>
-
-          <div className="mt-6">
-            <label className="block font-bold mb-2">Description</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-              rows={4}
-              placeholder="Product description, flaws, authenticity details..."
-              className="w-full px-4 py-3 border-2 border-black focus:outline-none focus:ring-2 focus:ring-[--comic-purple] font-bold resize-none"
+          <label className="border-2 border-dashed border-black p-3 font-bold">
+            360 Video
+            <input
+              className="mt-2 w-full"
+              type="file"
+              accept="video/*"
+              onChange={(e) => setForm((s) => ({ ...s, videoFile: e.target.files?.[0] || null }))}
             />
-          </div>
-        </motion.div>
+          </label>
+        </div>
 
-        {/* Submit Buttons */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="flex gap-4"
+        <button
+          type="submit"
+          disabled={isPending}
+          className="w-full border-4 border-black bg-[var(--comic-green)] px-4 py-3 font-heading text-xl text-white shadow-hard disabled:opacity-60"
         >
-          <button
-            type="button"
-            onClick={() => window.history.back()}
-            className="flex-1 px-6 py-4 border-4 border-black font-heading text-xl hover:bg-gray-100 transition"
-          >
-            CANCEL
-          </button>
-          <button
-            type="submit"
-            className="flex-1 px-6 py-4 bg-[--comic-green] text-white border-4 border-black shadow-hard font-heading text-xl hover:scale-105 transition"
-          >
-            CREATE PRODUCT
-          </button>
-        </motion.div>
+          {isPending ? "Creating..." : "Create Product"}
+        </button>
       </form>
     </div>
   );

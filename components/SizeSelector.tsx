@@ -27,7 +27,7 @@ export default function SizeSelector({ size, className = "" }: SizeSelectorProps
               onClick={() => setSelectedSystem(system)}
               className={`flex-1 py-2 px-3 border-2 border-black font-bold text-sm transition ${
                 selectedSystem === system
-                  ? "bg-[--comic-red] text-white"
+                  ? "bg-[var(--comic-red)] text-white"
                   : "bg-white hover:bg-gray-100"
               }`}
             >

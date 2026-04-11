@@ -1,13 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Package, Eye, Clock, CheckCircle, XCircle, Truck } from "lucide-react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useAuth } from "@/components/AuthProvider";
 
 type Order = {
   id: string;
@@ -104,18 +104,18 @@ const statusConfig = {
 };
 
 export default function OrdersPage() {
-  const { data: session, status } = useSession();
+  const { session, loading } = useAuth();
   const router = useRouter();
-  const [orders, setOrders] = useState(mockOrders);
+  const [orders] = useState(mockOrders);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   useEffect(() => {
-    if (status === "unauthenticated") {
+    if (!loading && !session) {
       router.push("/auth/signin");
     }
-  }, [status, router]);
+  }, [loading, session, router]);
 
-  if (status === "loading") {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-bounce font-heading text-4xl">LOADING...</div>
@@ -128,7 +128,7 @@ export default function OrdersPage() {
       <Navbar />
       <div className="min-h-screen bg-white">
         {/* Header */}
-        <div className="bg-gradient-to-r from-[--comic-purple] to-[--comic-green] border-b-4 border-black p-6">
+        <div className="bg-gradient-to-r from-[var(--comic-purple)] to-[var(--comic-green)] border-b-4 border-black p-6">
           <div className="max-w-7xl mx-auto">
             <h1 className="font-heading text-5xl text-white mb-2 flex items-center gap-3">
               <Package size={48} />
@@ -153,7 +153,7 @@ export default function OrdersPage() {
               Start shopping and your orders will appear here!
             </p>
             <Link href="/shop">
-              <button className="bg-[--comic-green] text-white px-8 py-4 border-4 border-black shadow-hard font-heading text-xl hover:scale-105 transition">
+              <button className="bg-[var(--comic-green)] text-white px-8 py-4 border-4 border-black shadow-hard font-heading text-xl hover:scale-105 transition">
                 START SHOPPING
               </button>
             </Link>
@@ -190,7 +190,7 @@ export default function OrdersPage() {
                       </span>
                       <button
                         onClick={() => setSelectedOrder(order)}
-                        className="p-3 bg-[--comic-purple] text-white border-2 border-black hover:bg-purple-700 transition"
+                        className="p-3 bg-[var(--comic-purple)] text-white border-2 border-black hover:bg-purple-700 transition"
                       >
                         <Eye size={20} />
                       </button>

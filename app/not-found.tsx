@@ -70,7 +70,7 @@ export default function NotFound() {
             animate={{ rotate: [0, 10, 0] }}
             transition={{ repeat: Infinity, duration: 3 }}
           >
-            <div className="font-heading text-5xl text-[--comic-red] bg-white border-4 border-black px-6 py-3 rotate-12 shadow-hard-lg">
+            <div className="font-heading text-5xl text-[var(--comic-red)] bg-white border-4 border-black px-6 py-3 rotate-12 shadow-hard-lg">
               LOST?
             </div>
           </motion.div>
@@ -80,7 +80,7 @@ export default function NotFound() {
             animate={{ rotate: [0, -10, 0] }}
             transition={{ repeat: Infinity, duration: 3.5 }}
           >
-            <div className="font-heading text-5xl text-[--comic-purple] bg-white border-4 border-black px-6 py-3 -rotate-12 shadow-hard-lg">
+            <div className="font-heading text-5xl text-[var(--comic-purple)] bg-white border-4 border-black px-6 py-3 -rotate-12 shadow-hard-lg">
               UH OH!
             </div>
           </motion.div>

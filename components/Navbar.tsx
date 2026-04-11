@@ -6,17 +6,25 @@ import Link from "next/link";
 import { ShoppingCart, Menu, X, Heart, Package, User, LogOut } from "lucide-react";
 import { useCartStore } from "@/store/cart";
 import { useWishlist } from "@/store/wishlist";
+import { useUiStore } from "@/store/ui";
 import { useState } from "react";
-import { useSession, signOut } from "next-auth/react";
 import CartDrawer from "./CartDrawer";
+import { useAuth } from "@/components/AuthProvider";
 
 export default function Navbar() {
-  const itemCount = useCartStore((state) => state.getItemCount());
+  const itemCount = useCartStore((state) => state.items.length);
   const wishlistCount = useWishlist((state) => state.items.length);
-  const { data: session } = useSession();
+  const cartOpen = useUiStore((state) => state.cartDrawerOpen);
+  const openCartDrawer = useUiStore((state) => state.openCartDrawer);
+  const closeCartDrawer = useUiStore((state) => state.closeCartDrawer);
+  const { session, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [cartOpen, setCartOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userDisplayName =
+    (session?.user?.user_metadata?.full_name as string | undefined) ||
+    (session?.user?.user_metadata?.name as string | undefined) ||
+    session?.user?.email?.split("@")[0] ||
+    "User";
 
   return (
     <motion.nav
@@ -43,19 +51,19 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-6">
             <Link
               href="/"
-              className="font-bold hover:text-[--comic-red] transition-colors"
+              className="font-bold hover:text-[var(--comic-red)] transition-colors"
             >
               HOME
             </Link>
             <Link
               href="/shop"
-              className="font-bold hover:text-[--comic-red] transition-colors"
+              className="font-bold hover:text-[var(--comic-red)] transition-colors"
             >
               SHOP
             </Link>
             <Link
               href="/about"
-              className="font-bold hover:text-[--comic-red] transition-colors"
+              className="font-bold hover:text-[var(--comic-red)] transition-colors"
             >
               ABOUT
             </Link>
@@ -66,13 +74,13 @@ export default function Navbar() {
             {/* Wishlist Button */}
             <Link href="/wishlist">
               <motion.button
-                className="relative bg-[--comic-purple] text-white p-3 border-4 border-black shadow-hard"
+                className="relative bg-[var(--comic-purple)] text-white p-3 border-4 border-black shadow-hard"
                 whileHover={{ scale: 1.05, x: 2, y: 2 }}
                 whileTap={{ scale: 0.95 }}
               >
                 <Heart size={24} />
                 {wishlistCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-[--comic-red] text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full border-2 border-black">
+                  <span className="absolute -top-2 -right-2 bg-[var(--comic-red)] text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full border-2 border-black">
                     {wishlistCount}
                   </span>
                 )}
@@ -81,14 +89,14 @@ export default function Navbar() {
 
             {/* Cart Button */}
             <motion.button
-              onClick={() => setCartOpen(true)}
-              className="relative bg-[--comic-red] text-white p-3 border-4 border-black shadow-hard"
+              onClick={openCartDrawer}
+              className="relative bg-[var(--comic-red)] text-white p-3 border-4 border-black shadow-hard"
               whileHover={{ scale: 1.05, x: 2, y: 2 }}
               whileTap={{ scale: 0.95 }}
             >
               <ShoppingCart size={24} />
               {itemCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-[--comic-purple] text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full border-2 border-black">
+                <span className="absolute -top-2 -right-2 bg-[var(--comic-purple)] text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full border-2 border-black">
                   {itemCount}
                 </span>
               )}
@@ -99,7 +107,7 @@ export default function Navbar() {
               <div className="relative">
                 <motion.button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="bg-[--comic-green] text-white p-3 border-4 border-black shadow-hard"
+                  className="bg-[var(--comic-green)] text-white p-3 border-4 border-black shadow-hard"
                   whileHover={{ scale: 1.05, x: 2, y: 2 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -114,7 +122,7 @@ export default function Navbar() {
                   >
                     <div className="p-4 border-b-4 border-black">
                       <p className="font-bold text-sm">
-                        {session.user?.name || "User"}
+                        {userDisplayName}
                       </p>
                       <p className="text-xs text-gray-600">
                         {session.user?.email}
@@ -139,10 +147,10 @@ export default function Navbar() {
                       </Link>
                       <button
                         onClick={() => {
-                          signOut({ callbackUrl: "/" });
+                          void signOut();
                           setUserMenuOpen(false);
                         }}
-                        className="w-full flex items-center gap-2 p-3 hover:bg-red-50 font-bold text-[--comic-red]"
+                        className="w-full flex items-center gap-2 p-3 hover:bg-red-50 font-bold text-[var(--comic-red)]"
                       >
                         <LogOut size={20} />
                         SIGN OUT
@@ -154,7 +162,7 @@ export default function Navbar() {
             ) : (
               <Link href="/auth/signin">
                 <motion.button
-                  className="bg-[--comic-green] text-white px-6 py-3 border-4 border-black shadow-hard font-bold"
+                  className="bg-[var(--comic-green)] text-white px-6 py-3 border-4 border-black shadow-hard font-bold"
                   whileHover={{ scale: 1.05, x: 2, y: 2 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -184,21 +192,21 @@ export default function Navbar() {
             <div className="flex flex-col gap-4">
               <Link
                 href="/"
-                className="font-bold hover:text-[--comic-red] transition-colors"
+                className="font-bold hover:text-[var(--comic-red)] transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 HOME
               </Link>
               <Link
                 href="/shop"
-                className="font-bold hover:text-[--comic-red] transition-colors"
+                className="font-bold hover:text-[var(--comic-red)] transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 SHOP
               </Link>
               <Link
                 href="/about"
-                className="font-bold hover:text-[--comic-red] transition-colors"
+                className="font-bold hover:text-[var(--comic-red)] transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 ABOUT
@@ -209,12 +217,12 @@ export default function Navbar() {
                 <>
                   <div className="border-t-4 border-black pt-4 mt-4">
                     <p className="font-bold text-sm mb-2">
-                      {session.user?.name || "User"}
+                      {userDisplayName}
                     </p>
                   </div>
                   <Link
                     href="/wishlist"
-                    className="flex items-center gap-2 font-bold hover:text-[--comic-purple]"
+                    className="flex items-center gap-2 font-bold hover:text-[var(--comic-purple)]"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Heart size={20} />
@@ -222,7 +230,7 @@ export default function Navbar() {
                   </Link>
                   <Link
                     href="/orders"
-                    className="flex items-center gap-2 font-bold hover:text-[--comic-purple]"
+                    className="flex items-center gap-2 font-bold hover:text-[var(--comic-purple)]"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Package size={20} />
@@ -230,10 +238,10 @@ export default function Navbar() {
                   </Link>
                   <button
                     onClick={() => {
-                      signOut({ callbackUrl: "/" });
+                      void signOut();
                       setMobileMenuOpen(false);
                     }}
-                    className="flex items-center gap-2 font-bold text-[--comic-red] hover:underline"
+                    className="flex items-center gap-2 font-bold text-[var(--comic-red)] hover:underline"
                   >
                     <LogOut size={20} />
                     SIGN OUT
@@ -242,7 +250,7 @@ export default function Navbar() {
               ) : (
                 <Link
                   href="/auth/signin"
-                  className="bg-[--comic-green] text-white px-6 py-3 border-4 border-black shadow-hard font-bold text-center"
+                  className="bg-[var(--comic-green)] text-white px-6 py-3 border-4 border-black shadow-hard font-bold text-center"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   SIGN IN
@@ -271,7 +279,7 @@ export default function Navbar() {
       </div>
 
       {/* Cart Drawer */}
-      <CartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} />
+      <CartDrawer isOpen={cartOpen} onClose={closeCartDrawer} />
     </motion.nav>
   );
 }

@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { Instagram, Phone, Mail, MapPin } from "lucide-react";
+import { Instagram, Phone, Mail } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ComicButton from "@/components/ComicButton";
@@ -13,7 +13,7 @@ export default function AboutPage() {
       <Navbar />
       <main className="min-h-screen">
         {/* Hero */}
-        <section className="bg-gradient-to-r from-[--comic-red] to-[--comic-purple] text-white py-20 border-b-4 border-black">
+        <section className="bg-gradient-to-r from-[var(--comic-red)] to-[var(--comic-purple)] text-white py-20 border-b-4 border-black">
           <div className="container mx-auto px-4 text-center">
             <motion.h1
               className="font-heading text-6xl md:text-8xl mb-4 drop-shadow-[4px_4px_0px_rgba(0,0,0,1)]"
@@ -113,7 +113,7 @@ export default function AboutPage() {
                   whileHover={{ scale: 1.05 }}
                 >
                   <div className="text-5xl mb-3">{item.icon}</div>
-                  <h3 className="font-heading text-xl mb-2 text-[--comic-red]">
+                  <h3 className="font-heading text-xl mb-2 text-[var(--comic-red)]">
                     {item.title}
                   </h3>
                   <p className="text-gray-300 text-sm">{item.desc}</p>
@@ -137,14 +137,14 @@ export default function AboutPage() {
                   href="tel:+923001234567"
                   className="flex flex-col items-center gap-2 p-4 border-2 border-black hover:bg-gray-100 transition"
                 >
-                  <Phone size={32} className="text-[--comic-red]" />
+                  <Phone size={32} className="text-[var(--comic-red)]" />
                   <span className="font-bold">+92 300 1234567</span>
                 </a>
                 <a
                   href="mailto:hello@flipside.pk"
                   className="flex flex-col items-center gap-2 p-4 border-2 border-black hover:bg-gray-100 transition"
                 >
-                  <Mail size={32} className="text-[--comic-purple]" />
+                  <Mail size={32} className="text-[var(--comic-purple)]" />
                   <span className="font-bold">hello@flipside.pk</span>
                 </a>
                 <a
@@ -153,7 +153,7 @@ export default function AboutPage() {
                   rel="noopener noreferrer"
                   className="flex flex-col items-center gap-2 p-4 border-2 border-black hover:bg-gray-100 transition"
                 >
-                  <Instagram size={32} className="text-[--comic-red]" />
+                  <Instagram size={32} className="text-[var(--comic-red)]" />
                   <span className="font-bold">@flipside.pk</span>
                 </a>
               </div>
