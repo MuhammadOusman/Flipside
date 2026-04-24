@@ -15,10 +15,7 @@ import {
 import ComicButton from "@/components/ComicButton";
 import { useCartStore } from "@/store/cart";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
-import {
-  placeOrderAction,
-  releaseProductReservationAction,
-} from "@/app/actions/storefront";
+import { releaseProductReservationAction } from "@/app/actions/storefront";
 import { useAnalytics } from "@/store/analytics";
 
 interface CartDrawerProps {
@@ -174,18 +171,25 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
     }
 
     startTransition(async () => {
-      const result = await placeOrderAction({
-        productId: primaryItem.id,
-        customerName: customer.name,
-        phone: customer.phone,
-        address: customer.address,
-        city: customer.city,
-        paymentMethod,
-        receiptImageUrl: receiptImageUrl || undefined,
+      const response = await fetch("/api/order/complete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          productId: primaryItem.id,
+          customerName: customer.name,
+          phone: customer.phone,
+          address: customer.address,
+          city: customer.city,
+          paymentMethod,
+          receiptImageUrl: receiptImageUrl || undefined,
+        }),
       });
 
-      if (!result.ok) {
-        setError(result.message || "Failed to place order");
+      const result = await response.json();
+      if (!response.ok) {
+        setError(result.error || result.message || "Failed to place order");
         return;
       }
 

@@ -85,17 +85,77 @@ type PlaceOrderPayload = {
   receiptImageUrl?: string;
 };
 
-export async function placeOrderAction(payload: PlaceOrderPayload) {
+export type OrderCompletionResponse = {
+  order_id: string;
+  customer: {
+    name: string;
+    phone: string;
+  };
+  shipping: {
+    address: string;
+    city: string;
+  };
+  order: {
+    name: string;
+    size: string;
+    qty: number;
+  };
+  customer_history: {
+    prior_orders: number;
+    prior_rto: number;
+  };
+};
+
+async function sendOrderWebhook(payload: OrderCompletionResponse) {
+  const webhookUrl = process.env.THIRD_PARTY_WEBHOOK_URL;
+  if (!webhookUrl) {
+    return;
+  }
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (process.env.THIRD_PARTY_WEBHOOK_SECRET) {
+    headers["Authorization"] = `Bearer ${process.env.THIRD_PARTY_WEBHOOK_SECRET}`;
+  }
+
+  try {
+    const res = await fetch(webhookUrl, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      console.error(
+        `Order webhook failed: ${res.status} ${res.statusText} for ${webhookUrl}`
+      );
+    }
+  } catch (error) {
+    console.error("Order webhook delivery error:", error);
+  }
+}
+
+export async function createOrderCompletionPayload(
+  payload: PlaceOrderPayload
+): Promise<
+  | { ok: false; message: string; code?: string }
+  | { ok: true; orderId: string; response: OrderCompletionResponse }
+> {
   const tenantId = await getTenantIdFromRequest();
   const sessionId = await getOrCreateSessionId();
   const supabase = getSupabaseAdminClient();
 
   const { data: customer } = await supabase
     .from("customers")
-    .select("is_blacklisted,total_orders")
+    .select("is_blacklisted,total_orders,returned_parcels")
     .eq("tenant_id", tenantId)
     .eq("phone", payload.phone)
     .maybeSingle();
+
+  const priorOrders = customer?.total_orders || 0;
+  const priorRto = customer?.returned_parcels || 0;
 
   if (payload.paymentMethod === "cod_with_advance" && customer?.is_blacklisted) {
     return {
@@ -107,7 +167,7 @@ export async function placeOrderAction(payload: PlaceOrderPayload) {
 
   const { data: product, error: productErr } = await supabase
     .from("products")
-    .select("id,status,reserved_by,reserved_until")
+    .select("id,status,reserved_by,reserved_until,brand,model,size_uk,size_eur")
     .eq("tenant_id", tenantId)
     .eq("id", payload.productId)
     .single();
@@ -134,6 +194,7 @@ export async function placeOrderAction(payload: PlaceOrderPayload) {
       tenant_id: tenantId,
       phone: payload.phone,
       total_orders: (customer?.total_orders || 0) + 1,
+      returned_parcels: customer?.returned_parcels || 0,
       is_blacklisted: customer?.is_blacklisted || false,
     },
     {
@@ -162,8 +223,8 @@ export async function placeOrderAction(payload: PlaceOrderPayload) {
     .select("id")
     .single();
 
-  if (orderErr) {
-    return { ok: false, message: orderErr.message };
+  if (orderErr || !order) {
+    return { ok: false, message: orderErr?.message || "Failed to create order" };
   }
 
   await supabase
@@ -172,8 +233,49 @@ export async function placeOrderAction(payload: PlaceOrderPayload) {
     .eq("tenant_id", tenantId)
     .eq("id", payload.productId);
 
+  const productName = `${product.brand} ${product.model}`.trim();
+  const productSize = product.size_eur
+    ? `${product.size_eur} EUR`
+    : `${product.size_uk} UK`;
+
+  const response: OrderCompletionResponse = {
+    order_id: order.id,
+    customer: {
+      name: payload.customerName,
+      phone: payload.phone,
+    },
+    shipping: {
+      address: payload.address,
+      city: payload.city,
+    },
+    order: {
+      name: productName,
+      size: productSize,
+      qty: 1,
+    },
+    customer_history: {
+      prior_orders: priorOrders,
+      prior_rto: priorRto,
+    },
+  };
+
+  await sendOrderWebhook(response);
+
+  return {
+    ok: true,
+    orderId: order.id,
+    response,
+  };
+}
+
+export async function placeOrderAction(payload: PlaceOrderPayload) {
+  const result = await createOrderCompletionPayload(payload);
+  if (!result.ok) {
+    return result;
+  }
+
   revalidatePath("/shop");
   revalidatePath("/admin/orders");
 
-  return { ok: true, orderId: order.id };
+  return { ok: true, orderId: result.orderId };
 }

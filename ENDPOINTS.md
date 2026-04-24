@@ -25,6 +25,24 @@ Source of truth: Next.js App Router files under `app/**/page.tsx` and `app/**/ro
 
 ## API Endpoints
 
+### `/api/order/complete`
+- Method: `POST`
+- Request body:
+  - `productId`
+  - `customerName`
+  - `phone`
+  - `address`
+  - `city`
+  - `paymentMethod`
+  - `receiptImageUrl` (optional)
+- Response body on success:
+  - `order_id`
+  - `customer`
+  - `shipping`
+  - `order` (`name`, `size`, `qty`)
+  - `customer_history` (`prior_orders`, `prior_rto`)
+- Behavior: creates an order and returns the exact live JSON payload when checkout completes.
+
 ### `/api/auth/[...nextauth]`
 - Methods: `GET`, `POST`
 - Current behavior: returns `410 Gone`
