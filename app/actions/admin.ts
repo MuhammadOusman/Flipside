@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getSupabaseAdminClient } from "@/lib/supabase/server";
 import { getTenantIdFromRequest } from "@/lib/tenant";
+import { sendOrderStatusCallback } from "@/lib/order-status-callback";
 
 type NewProductPayload = {
   slug: string;
@@ -80,6 +81,13 @@ export async function approvePaymentAction(orderId: string) {
     .update({ status: "sold", reserved_by: null, reserved_until: null })
     .eq("tenant_id", tenantId)
     .eq("id", order.product_id);
+
+  await sendOrderStatusCallback({
+    orderId: order.id,
+    status: "confirm",
+    reason: "payment approved",
+    source: "approvePaymentAction",
+  });
 
   revalidatePath("/admin/orders");
   revalidatePath("/admin/dashboard");
