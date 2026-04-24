@@ -176,6 +176,25 @@ export async function createOrderCompletionPayload(
     return { ok: false, message: "Product not found" };
   }
 
+  const { data: existingOrder, error: existingOrderErr } = await supabase
+    .from("orders")
+    .select("id")
+    .eq("tenant_id", tenantId)
+    .eq("product_id", payload.productId)
+    .maybeSingle();
+
+  if (existingOrderErr) {
+    return { ok: false, message: existingOrderErr.message };
+  }
+
+  if (existingOrder) {
+    return {
+      ok: false,
+      code: "PRODUCT_ALREADY_ORDERED",
+      message: "This item has already been ordered. Please choose another pair.",
+    };
+  }
+
   const reservedByOther =
     product.status === "reserved" &&
     product.reserved_until &&
@@ -224,6 +243,14 @@ export async function createOrderCompletionPayload(
     .single();
 
   if (orderErr || !order) {
+    if (orderErr?.code === "23505") {
+      return {
+        ok: false,
+        code: "PRODUCT_ALREADY_ORDERED",
+        message: "This item has already been ordered. Please choose another pair.",
+      };
+    }
+
     return { ok: false, message: orderErr?.message || "Failed to create order" };
   }
 

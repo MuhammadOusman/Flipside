@@ -65,8 +65,18 @@ export async function POST(req: NextRequest) {
   });
 
   if (!result.ok) {
+    let message = result.message || "Failed to place order";
+
+    if (
+      result.code === "ORDER_FAILED" &&
+      /(violates row-level security|violates unique constraint|foreign key constraint)/i.test(message)
+    ) {
+      message =
+        "We could not place your order because the item is no longer available. Please choose another pair.";
+    }
+
     return jsonResponse(
-      { error: result.message, code: result.code ?? "ORDER_FAILED" },
+      { error: message, code: result.code ?? "ORDER_FAILED" },
       400
     );
   }
