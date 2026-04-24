@@ -25,6 +25,7 @@ interface CartDrawerProps {
 
 type PaymentMethod = "cod_with_advance" | "full_bank_transfer";
 const OTP_ENABLED = false;
+const RECEIPT_UPLOAD_ENABLED = false;
 
 function formatMMSS(timestamp?: string | null) {
   if (!timestamp) {
@@ -109,7 +110,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   }
 
   function handleStepThreeContinue() {
-    if (paymentMethod === "full_bank_transfer" && !receiptFile) {
+    if (RECEIPT_UPLOAD_ENABLED && paymentMethod === "full_bank_transfer" && !receiptFile) {
       setError("Upload payment receipt before continuing.");
       return;
     }
@@ -223,7 +224,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
       return;
     }
 
-    if (paymentMethod === "full_bank_transfer" && !receiptFile) {
+    if (RECEIPT_UPLOAD_ENABLED && paymentMethod === "full_bank_transfer" && !receiptFile) {
       setError("Upload payment receipt before placing your order.");
       return;
     }
@@ -232,7 +233,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
     setError(null);
 
     let receiptImageUrl = "";
-    if (receiptFile) {
+    if (RECEIPT_UPLOAD_ENABLED && receiptFile) {
       const supabase = getSupabaseBrowserClient();
       const objectPath = `${Date.now()}-${receiptFile.name.replace(/\s+/g, "-")}`;
       const { error: uploadError } = await supabase.storage
@@ -240,14 +241,19 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
         .upload(objectPath, receiptFile, { upsert: false });
 
       if (uploadError) {
-        setError(uploadError.message);
-        return;
+        console.debug("[CartDrawer] receipt upload error", uploadError);
+        if (/row-level security|violates row-level security/i.test(uploadError.message)) {
+          setSuccessMessage("Receipt upload is temporarily unavailable. Order will be placed without receipt attachment.");
+        } else {
+          setError(uploadError.message);
+          return;
+        }
+      } else {
+        const { data } = supabase.storage
+          .from("payment-receipts")
+          .getPublicUrl(objectPath);
+        receiptImageUrl = data.publicUrl;
       }
-
-      const { data } = supabase.storage
-        .from("payment-receipts")
-        .getPublicUrl(objectPath);
-      receiptImageUrl = data.publicUrl;
     }
 
     startTransition(async () => {
@@ -488,23 +494,31 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                 {step === 3 && (
                   <div className="space-y-4 border-4 border-black bg-white p-4 shadow-hard">
                     <p className="font-heading text-2xl">STEP 3: UPLOAD RECEIPT</p>
-                    <div className="border-2 border-black bg-gray-50 p-3 text-sm font-bold">
-                      <p>Account Title: Flipside Kicks</p>
-                      <p>IBAN: PK00XXXX0000000000000000</p>
-                      <p>JazzCash: 03XX-XXXXXXX</p>
-                    </div>
+                    {RECEIPT_UPLOAD_ENABLED ? (
+                      <>
+                        <div className="border-2 border-black bg-gray-50 p-3 text-sm font-bold">
+                          <p>Account Title: Flipside Kicks</p>
+                          <p>IBAN: PK00XXXX0000000000000000</p>
+                          <p>JazzCash: 03XX-XXXXXXX</p>
+                        </div>
 
-                    <label className="block rounded border-2 border-dashed border-black bg-white p-4 text-sm font-bold">
-                      <span className="mb-2 flex items-center gap-2">
-                        <ReceiptText size={18} /> Upload JazzCash/Bank Receipt
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
-                        className="w-full"
-                      />
-                    </label>
+                        <label className="block rounded border-2 border-dashed border-black bg-white p-4 text-sm font-bold">
+                          <span className="mb-2 flex items-center gap-2">
+                            <ReceiptText size={18} /> Upload JazzCash/Bank Receipt
+                          </span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
+                            className="w-full"
+                          />
+                        </label>
+                      </>
+                    ) : (
+                      <div className="border-2 border-black bg-green-50 p-3 text-sm font-bold text-green-800">
+                        Receipt upload is temporarily disabled. You can continue without attaching a receipt.
+                      </div>
+                    )}
 
                     <div className="grid grid-cols-2 gap-2">
                       <ComicButton variant="secondary" onClick={() => moveToStep(2)} className="w-full">
