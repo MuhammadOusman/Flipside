@@ -122,12 +122,14 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
 
     setError(null);
     setOtpPhone(normalizedPhone);
+    console.debug("[CartDrawer] sendOtp", { otpPhone, normalizedPhone });
     const supabase = getSupabaseBrowserClient();
     const { error: otpError } = await supabase.auth.signInWithOtp({
       phone: normalizedPhone,
     });
 
     if (otpError) {
+      console.debug("[CartDrawer] sendOtp error", otpError);
       setError(otpError.message);
       return;
     }
@@ -147,6 +149,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
       return;
     }
 
+    console.debug("[CartDrawer] verifyOtp", { otpPhone, normalizedPhone, otpCode });
     const supabase = getSupabaseBrowserClient();
     const { error: verifyError } = await supabase.auth.verifyOtp({
       phone: normalizedPhone,
@@ -155,6 +158,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
     });
 
     if (verifyError) {
+      console.debug("[CartDrawer] verifyOtp error", verifyError);
       setError(verifyError.message);
       return;
     }
@@ -215,24 +219,27 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
     }
 
     startTransition(async () => {
+      const payload = {
+        productId: primaryItem.id,
+        customerName: customer.name,
+        phone: normalizedCustomerPhone,
+        address: customer.address,
+        city: customer.city,
+        paymentMethod,
+        receiptImageUrl: receiptImageUrl || undefined,
+      };
+      console.debug("[CartDrawer] placeOrder payload", payload);
       const response = await fetch("/api/order/complete", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          productId: primaryItem.id,
-          customerName: customer.name,
-          phone: normalizedCustomerPhone,
-          address: customer.address,
-          city: customer.city,
-          paymentMethod,
-          receiptImageUrl: receiptImageUrl || undefined,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const result = await response.json();
       if (!response.ok) {
+        console.debug("[CartDrawer] placeOrder error", result);
         setError(result.error || result.message || "Failed to place order");
         return;
       }
