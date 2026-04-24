@@ -1,0 +1,25 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e106]:
+    - generic [ref=e107]:
+      - img "Flipside" [ref=e108]
+      - heading "ADMIN LOGIN" [level=1] [ref=e109]
+      - paragraph [ref=e110]: Supabase email/password protected
+    - generic [ref=e111]:
+      - generic [ref=e112]:
+        - generic [ref=e113]:
+          - img [ref=e114]
+          - text: Email
+        - textbox "Email" [ref=e117]:
+          - /placeholder: admin@store.pk
+          - text: admin@flipside.local
+      - generic [ref=e118]:
+        - generic [ref=e119]:
+          - img [ref=e120]
+          - text: Password
+        - textbox "Password" [ref=e123]:
+          - /placeholder: "********"
+          - text: Flipside123!
+      - button "Login" [ref=e124] [cursor=pointer]
+  - button [ref=e98]:
+    - img [ref=e99]
+  - alert [ref=e102]

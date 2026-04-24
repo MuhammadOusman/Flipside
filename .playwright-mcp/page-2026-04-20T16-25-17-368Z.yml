@@ -1,0 +1,89 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e125]:
+    - complementary [ref=e126]:
+      - generic [ref=e127]:
+        - generic [ref=e128]:
+          - img "Flipside" [ref=e129]
+          - generic [ref=e130]:
+            - heading "FLIPSIDE" [level=2] [ref=e131]
+            - paragraph [ref=e132]: Admin Panel
+        - button [ref=e133]:
+          - img [ref=e134]
+      - navigation [ref=e137]:
+        - link "Dashboard" [ref=e138] [cursor=pointer]:
+          - /url: /admin/dashboard
+          - generic [ref=e139]:
+            - img [ref=e140]
+            - generic [ref=e145]: Dashboard
+        - link "Products" [ref=e146] [cursor=pointer]:
+          - /url: /admin/products
+          - generic [ref=e147]:
+            - img [ref=e148]
+            - generic [ref=e152]: Products
+        - link "Orders" [ref=e153] [cursor=pointer]:
+          - /url: /admin/orders
+          - generic [ref=e154]:
+            - img [ref=e155]
+            - generic [ref=e158]: Orders
+        - link "Brands" [ref=e159] [cursor=pointer]:
+          - /url: /admin/brands
+          - generic [ref=e160]:
+            - img [ref=e161]
+            - generic [ref=e164]: Brands
+        - link "Analytics" [ref=e165] [cursor=pointer]:
+          - /url: /admin/analytics
+          - generic [ref=e166]:
+            - img [ref=e167]
+            - generic [ref=e169]: Analytics
+        - link "Settings" [ref=e170] [cursor=pointer]:
+          - /url: /admin/settings
+          - generic [ref=e171]:
+            - img [ref=e172]
+            - generic [ref=e175]: Settings
+      - button "Logout" [ref=e177]:
+        - img [ref=e178]
+        - generic [ref=e181]: Logout
+    - main [ref=e182]:
+      - generic [ref=e184]:
+        - heading "Dashboard" [level=1] [ref=e185]
+        - generic [ref=e186]:
+          - paragraph [ref=e187]: Signed in
+          - paragraph [ref=e188]: admin@flipside.local
+      - generic [ref=e190]:
+        - generic [ref=e191]:
+          - heading "MISSION CONTROL" [level=1] [ref=e192]
+          - paragraph [ref=e193]: "Tenant: b4d95f94-6b3e-4ae5-be69-66a5ef0fce26"
+        - generic [ref=e194]:
+          - article [ref=e195]:
+            - paragraph [ref=e196]:
+              - img [ref=e197]
+              - text: Available pairs
+            - paragraph [ref=e201]: "21"
+          - article [ref=e202]:
+            - paragraph [ref=e203]:
+              - img [ref=e204]
+              - text: Pending verification
+            - paragraph [ref=e207]: "1"
+          - article [ref=e208]:
+            - paragraph [ref=e209]:
+              - img [ref=e210]
+              - text: Total Revenue
+            - paragraph [ref=e212]: Rs. 0
+          - article [ref=e213]:
+            - paragraph [ref=e214]:
+              - img [ref=e215]
+              - text: Gross Profit
+            - paragraph [ref=e218]: Rs. 0
+            - paragraph [ref=e219]: Sum(Price) - Sum(sourcing_cost)
+        - generic [ref=e220]:
+          - heading "Verification Queue" [level=2] [ref=e221]
+          - list [ref=e222]:
+            - listitem [ref=e223]:
+              - generic [ref=e224]:
+                - paragraph [ref=e225]: Ali Khan
+                - paragraph [ref=e226]: Le coq sportif Agate Lo femme
+              - link "Review" [ref=e227] [cursor=pointer]:
+                - /url: /admin/orders
+  - button [ref=e98]:
+    - img [ref=e99]
+  - alert [ref=e102]

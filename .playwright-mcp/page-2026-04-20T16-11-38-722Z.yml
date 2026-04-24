@@ -1,0 +1,79 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - img "Flipside" [ref=e6]
+          - generic [ref=e7]:
+            - heading "FLIPSIDE" [level=2] [ref=e8]
+            - paragraph [ref=e9]: Admin Panel
+        - button [ref=e10]:
+          - img [ref=e11]
+      - navigation [ref=e14]:
+        - link "Dashboard" [ref=e15] [cursor=pointer]:
+          - /url: /admin/dashboard
+          - generic [ref=e16]:
+            - img [ref=e17]
+            - generic [ref=e22]: Dashboard
+        - link "Products" [ref=e23] [cursor=pointer]:
+          - /url: /admin/products
+          - generic [ref=e24]:
+            - img [ref=e25]
+            - generic [ref=e29]: Products
+        - link "Orders" [ref=e30] [cursor=pointer]:
+          - /url: /admin/orders
+          - generic [ref=e31]:
+            - img [ref=e32]
+            - generic [ref=e35]: Orders
+        - link "Brands" [ref=e36] [cursor=pointer]:
+          - /url: /admin/brands
+          - generic [ref=e37]:
+            - img [ref=e38]
+            - generic [ref=e41]: Brands
+        - link "Analytics" [ref=e42] [cursor=pointer]:
+          - /url: /admin/analytics
+          - generic [ref=e43]:
+            - img [ref=e44]
+            - generic [ref=e46]: Analytics
+        - link "Settings" [ref=e47] [cursor=pointer]:
+          - /url: /admin/settings
+          - generic [ref=e48]:
+            - img [ref=e49]
+            - generic [ref=e52]: Settings
+      - button "Logout" [ref=e54]:
+        - img [ref=e55]
+        - generic [ref=e58]: Logout
+    - main [ref=e59]:
+      - generic [ref=e61]:
+        - heading "Orders" [level=1] [ref=e62]
+        - generic [ref=e63]:
+          - paragraph [ref=e64]: Signed in
+          - paragraph [ref=e65]: admin
+      - generic [ref=e67]:
+        - generic [ref=e68]:
+          - heading "PENDING VERIFICATION" [level=1] [ref=e69]
+          - button "Ali Khan Le coq sportif Agate Lo femme 4/12/2026, 12:55:50 AM" [ref=e70]:
+            - paragraph [ref=e71]: Ali Khan
+            - paragraph [ref=e72]: Le coq sportif Agate Lo femme
+            - paragraph [ref=e73]: 4/12/2026, 12:55:50 AM
+        - generic [ref=e75]:
+          - heading "ORDER REVIEW" [level=2] [ref=e76]
+          - generic [ref=e77]:
+            - generic [ref=e78]:
+              - paragraph [ref=e79]: Ali Khan
+              - paragraph [ref=e80]: "Phone: 03001234567"
+              - paragraph [ref=e81]: "City: Karachi"
+              - paragraph [ref=e82]: "Address: Shahrah-e-Faisal, Karachi"
+              - paragraph [ref=e83]: "Payment: cod_with_advance"
+              - paragraph [ref=e84]: "Status: pending_verification"
+            - paragraph [ref=e86]: No receipt image uploaded.
+          - generic [ref=e87]:
+            - button "Approve Payment" [ref=e88]:
+              - img [ref=e89]
+              - text: Approve Payment
+            - button "Generate Tracking" [ref=e92]:
+              - img [ref=e93]
+              - text: Generate Tracking
+  - button [ref=e98]:
+    - img [ref=e99]
+  - alert [ref=e102]

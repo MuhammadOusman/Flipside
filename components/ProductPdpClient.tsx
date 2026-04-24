@@ -11,6 +11,7 @@ import { reserveProductAction } from "@/app/actions/storefront";
 import { useCartStore } from "@/store/cart";
 import { useUiStore } from "@/store/ui";
 import { useWishlist } from "@/store/wishlist";
+import { useAnalytics } from "@/store/analytics";
 
 type ProductPdpClientProps = {
   product: PublicProduct;
@@ -36,8 +37,11 @@ function durationToHMS(timestamp?: string | null) {
 export default function ProductPdpClient({ product }: ProductPdpClientProps) {
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
+  const cartItems = useCartStore((state) => state.items);
   const openCartDrawer = useUiStore((state) => state.openCartDrawer);
   const { isInWishlist, addItem: addWishlist, removeItem } = useWishlist();
+  const trackCartAdd = useAnalytics((state) => state.trackCartAdd);
+  const trackProductView = useAnalytics((state) => state.trackProductView);
 
   const [active, setActive] = useState(0);
   const [copied, setCopied] = useState(false);
@@ -49,6 +53,10 @@ export default function ProductPdpClient({ product }: ProductPdpClientProps) {
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    trackProductView(product.id);
+  }, [product.id, trackProductView]);
 
   const inWishlist = isInWishlist(product.id);
 
@@ -83,6 +91,19 @@ export default function ProductPdpClient({ product }: ProductPdpClientProps) {
 
   async function addToCart() {
     setError(null);
+
+    const alreadyInCart = cartItems.some((item) => item.id === product.id);
+    if (alreadyInCart) {
+      openCartDrawer();
+      return;
+    }
+
+    const hasDifferentReservedPair = cartItems.some((item) => item.id !== product.id);
+    if (hasDifferentReservedPair) {
+      setError("Only one pair can be reserved at a time. Remove the current pair from cart first.");
+      return;
+    }
+
     startTransition(async () => {
       const result = await reserveProductAction(product.id);
       if (!result.ok) {
@@ -100,6 +121,7 @@ export default function ProductPdpClient({ product }: ProductPdpClientProps) {
         slug: product.slug,
         reservedUntil: result.reservedUntil,
       });
+      trackCartAdd(product.id);
 
       openCartDrawer();
     });

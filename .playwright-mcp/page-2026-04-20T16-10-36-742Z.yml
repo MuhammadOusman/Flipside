@@ -1,0 +1,228 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e4]:
+      - link "Flipside Logo FLIPSIDE" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - img "Flipside Logo" [ref=e6]
+        - generic [ref=e7]: FLIPSIDE
+      - generic [ref=e8]:
+        - link "HOME" [ref=e9] [cursor=pointer]:
+          - /url: /
+        - link "SHOP" [ref=e10] [cursor=pointer]:
+          - /url: /shop
+        - link "ABOUT" [ref=e11] [cursor=pointer]:
+          - /url: /about
+      - generic [ref=e12]:
+        - link [ref=e13] [cursor=pointer]:
+          - /url: /wishlist
+          - button [ref=e14]:
+            - img [ref=e15]
+        - button [ref=e17]:
+          - img [ref=e18]
+        - link "SIGN IN" [ref=e22] [cursor=pointer]:
+          - /url: /auth/signin
+          - button "SIGN IN" [ref=e23]
+    - generic [ref=e25]:
+      - generic [ref=e26]: ⚡ RESTOCKED EVERY SUNDAY • 💯 COD AVAILABLE • ✅ 100% LEGIT
+      - generic [ref=e27]: ⚡ RESTOCKED EVERY SUNDAY • 💯 COD AVAILABLE • ✅ 100% LEGIT
+      - generic [ref=e28]: ⚡ RESTOCKED EVERY SUNDAY • 💯 COD AVAILABLE • ✅ 100% LEGIT
+      - generic [ref=e29]: ⚡ RESTOCKED EVERY SUNDAY • 💯 COD AVAILABLE • ✅ 100% LEGIT
+      - generic [ref=e30]: ⚡ RESTOCKED EVERY SUNDAY • 💯 COD AVAILABLE • ✅ 100% LEGIT
+      - generic [ref=e31]: ⚡ RESTOCKED EVERY SUNDAY • 💯 COD AVAILABLE • ✅ 100% LEGIT
+      - generic [ref=e32]: ⚡ RESTOCKED EVERY SUNDAY • 💯 COD AVAILABLE • ✅ 100% LEGIT
+      - generic [ref=e33]: ⚡ RESTOCKED EVERY SUNDAY • 💯 COD AVAILABLE • ✅ 100% LEGIT
+      - generic [ref=e34]: ⚡ RESTOCKED EVERY SUNDAY • 💯 COD AVAILABLE • ✅ 100% LEGIT
+      - generic [ref=e35]: ⚡ RESTOCKED EVERY SUNDAY • 💯 COD AVAILABLE • ✅ 100% LEGIT
+  - main [ref=e36]:
+    - generic [ref=e39]:
+      - heading "THRIFT SHOES" [level=1] [ref=e40]
+      - paragraph [ref=e41]: Jordans • Dunks • Yeezy
+      - link "SHOP NOW" [ref=e43] [cursor=pointer]:
+        - /url: /shop
+        - button "SHOP NOW" [ref=e44]
+    - generic [ref=e45]:
+      - generic [ref=e46]:
+        - heading "LATEST DROP" [level=2] [ref=e47]
+        - link "VIEW ALL" [ref=e48] [cursor=pointer]:
+          - /url: /shop
+          - button "VIEW ALL" [ref=e49]
+      - generic [ref=e50]:
+        - link [ref=e51] [cursor=pointer]:
+          - /url: /product/le-coq-sportif-agate-lo-femme-dtnubkijxqo
+          - article [ref=e52]:
+            - generic [ref=e53]:
+              - img "Le coq sportif Agate Lo femme" [ref=e55]
+              - button [ref=e56]:
+                - img [ref=e57]
+            - generic [ref=e59]:
+              - generic [ref=e60]:
+                - generic [ref=e61]:
+                  - paragraph [ref=e62]: Le coq sportif
+                  - heading "Le coq sportif Agate Lo femme" [level=3] [ref=e63]
+                - generic [ref=e64]: UK 7
+              - generic [ref=e65]:
+                - generic [ref=e66]: "CONDITION:"
+                - generic [ref=e69]: 10/10
+              - paragraph [ref=e70]: PKR 2,000
+              - button "Add to Cart" [ref=e71]
+        - link [ref=e72] [cursor=pointer]:
+          - /url: /product/adidas-caflair-dtlq1e0dfca
+          - article [ref=e73]:
+            - generic [ref=e74]:
+              - img "Adidas Caflair" [ref=e76]
+              - button [ref=e77]:
+                - img [ref=e78]
+            - generic [ref=e80]:
+              - generic [ref=e81]:
+                - generic [ref=e82]:
+                  - paragraph [ref=e83]: Adidas
+                  - heading "Adidas Caflair" [level=3] [ref=e84]
+                - generic [ref=e85]: UK 8.5
+              - generic [ref=e86]:
+                - generic [ref=e87]: "CONDITION:"
+                - generic [ref=e90]: 9/10
+              - paragraph [ref=e91]: PKR 1,500
+              - button "Add to Cart" [ref=e92]
+        - link [ref=e93] [cursor=pointer]:
+          - /url: /product/anna-field-trainers-dtlnyekdxf0
+          - article [ref=e94]:
+            - generic [ref=e95]:
+              - img "Anna Field Trainers" [ref=e97]
+              - button [ref=e98]:
+                - img [ref=e99]
+            - generic [ref=e101]:
+              - generic [ref=e102]:
+                - generic [ref=e103]:
+                  - paragraph [ref=e104]: Anna Field
+                  - heading "Anna Field Trainers" [level=3] [ref=e105]
+                - generic [ref=e106]: UK 7
+              - generic [ref=e107]:
+                - generic [ref=e108]: "CONDITION:"
+                - generic [ref=e111]: 9/10
+              - paragraph [ref=e112]: PKR 1,200
+              - button "Add to Cart" [ref=e113]
+        - link [ref=e114] [cursor=pointer]:
+          - /url: /product/champion-rebound-platform-low-dti-ag4jaog
+          - article [ref=e115]:
+            - generic [ref=e116]:
+              - img "Champion Rebound Platform Low" [ref=e118]
+              - button [ref=e119]:
+                - img [ref=e120]
+            - generic [ref=e122]:
+              - generic [ref=e123]:
+                - generic [ref=e124]:
+                  - paragraph [ref=e125]: Champion
+                  - heading "Champion Rebound Platform Low" [level=3] [ref=e126]
+                - generic [ref=e127]: UK 6
+              - generic [ref=e128]:
+                - generic [ref=e129]: "CONDITION:"
+                - generic [ref=e132]: 10/10
+              - paragraph [ref=e133]: PKR 4,000
+              - button "Add to Cart" [ref=e134]
+        - link [ref=e135] [cursor=pointer]:
+          - /url: /product/le-coq-sportif-classic-soft-tricolore-dtijeyojdvk
+          - article [ref=e136]:
+            - generic [ref=e137]:
+              - img "Le coq sportif Classic soft tricolore" [ref=e139]
+              - button [ref=e140]:
+                - img [ref=e141]
+            - generic [ref=e143]:
+              - generic [ref=e144]:
+                - generic [ref=e145]:
+                  - paragraph [ref=e146]: Le coq sportif
+                  - heading "Le coq sportif Classic soft tricolore" [level=3] [ref=e147]
+                - generic [ref=e148]: UK 9
+              - generic [ref=e149]:
+                - generic [ref=e150]: "CONDITION:"
+                - generic [ref=e153]: 9.5/10
+              - paragraph [ref=e154]: PKR 2,000
+              - button "Add to Cart" [ref=e155]
+        - link [ref=e156] [cursor=pointer]:
+          - /url: /product/nike-air-jordan-1-mid-dtgx7axdbvb
+          - article [ref=e157]:
+            - generic [ref=e158]:
+              - img "Nike Air Jordan 1 Mid" [ref=e160]
+              - button [ref=e161]:
+                - img [ref=e162]
+            - generic [ref=e164]:
+              - generic [ref=e165]:
+                - generic [ref=e166]:
+                  - paragraph [ref=e167]: Nike
+                  - heading "Nike Air Jordan 1 Mid" [level=3] [ref=e168]
+                - generic [ref=e169]: UK 8
+              - generic [ref=e170]:
+                - generic [ref=e171]: "CONDITION:"
+                - generic [ref=e174]: 9/10
+              - paragraph [ref=e175]: PKR 1,500
+              - button "Add to Cart" [ref=e176]
+    - generic [ref=e178]:
+      - heading "NEW DROPS EVERY SUNDAY" [level=2] [ref=e179]
+      - paragraph [ref=e180]: 1-of-1 inventory with anti-snipe reservations
+    - generic [ref=e181]:
+      - generic [ref=e183]:
+        - generic [ref=e184]:
+          - img "Flipside" [ref=e185]
+          - paragraph [ref=e186]: FLIPSIDE
+          - paragraph [ref=e187]: "Pakistan's #1 thrift shoe store. Fresh kicks, unbeatable prices."
+        - generic [ref=e188]:
+          - heading "QUICK LINKS" [level=3] [ref=e189]
+          - list [ref=e190]:
+            - listitem [ref=e191]:
+              - link "Home" [ref=e192] [cursor=pointer]:
+                - /url: /
+            - listitem [ref=e193]:
+              - link "Shop" [ref=e194] [cursor=pointer]:
+                - /url: /shop
+            - listitem [ref=e195]:
+              - link "About Us" [ref=e196] [cursor=pointer]:
+                - /url: /about
+            - listitem [ref=e197]:
+              - link "Contact" [ref=e198] [cursor=pointer]:
+                - /url: /contact
+        - generic [ref=e199]:
+          - heading "CATEGORIES" [level=3] [ref=e200]
+          - list [ref=e201]:
+            - listitem [ref=e202]:
+              - link "Jordans" [ref=e203] [cursor=pointer]:
+                - /url: /shop?brand=jordan
+            - listitem [ref=e204]:
+              - link "Nike Dunks" [ref=e205] [cursor=pointer]:
+                - /url: /shop?brand=nike
+            - listitem [ref=e206]:
+              - link "Yeezy" [ref=e207] [cursor=pointer]:
+                - /url: /shop?brand=yeezy
+            - listitem [ref=e208]:
+              - link "New Balance" [ref=e209] [cursor=pointer]:
+                - /url: /shop?brand=new-balance
+        - generic [ref=e210]:
+          - heading "CONTACT US" [level=3] [ref=e211]
+          - list [ref=e212]:
+            - listitem [ref=e213]:
+              - img [ref=e214]
+              - link "+92 300 1234567" [ref=e216] [cursor=pointer]:
+                - /url: tel:+923001234567
+            - listitem [ref=e217]:
+              - img [ref=e218]
+              - link "hello@flipside.pk" [ref=e221] [cursor=pointer]:
+                - /url: mailto:hello@flipside.pk
+            - listitem [ref=e222]:
+              - img [ref=e223]
+              - generic [ref=e226]: Karachi, Pakistan
+          - generic [ref=e227]:
+            - link [ref=e228] [cursor=pointer]:
+              - /url: https://instagram.com
+              - img [ref=e229]
+            - link [ref=e232] [cursor=pointer]:
+              - /url: https://facebook.com
+              - img [ref=e233]
+      - generic [ref=e237]:
+        - paragraph [ref=e238]: © 2026 Flipside. All rights reserved.
+        - generic [ref=e239]:
+          - link "Privacy Policy" [ref=e240] [cursor=pointer]:
+            - /url: /privacy
+          - link "Terms & Conditions" [ref=e241] [cursor=pointer]:
+            - /url: /terms
+      - generic [ref=e242]: ⚡ FRESH KICKS • UNBEATABLE PRICES • 100% LEGIT ⚡
+  - button [ref=e243]:
+    - img [ref=e244]
+  - alert [ref=e247]

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import {
@@ -19,6 +19,7 @@ import {
   placeOrderAction,
   releaseProductReservationAction,
 } from "@/app/actions/storefront";
+import { useAnalytics } from "@/store/analytics";
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -44,7 +45,9 @@ function formatMMSS(timestamp?: string | null) {
 }
 
 export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
-  const { items, removeItem, clearCart, getTotal } = useCartStore();
+  const { items, removeItem, clearCart } = useCartStore();
+  const trackCheckoutStart = useAnalytics((state) => state.trackCheckoutStart);
+  const trackPurchase = useAnalytics((state) => state.trackPurchase);
 
   const [step, setStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod_with_advance");
@@ -55,6 +58,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const [isBusy, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [hasTrackedCheckoutStart, setHasTrackedCheckoutStart] = useState(false);
 
   const [customer, setCustomer] = useState({
     name: "",
@@ -64,8 +68,26 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   });
 
   const primaryItem = items[0] || null;
-  const total = useMemo(() => getTotal(), [getTotal]);
+  const total = primaryItem?.price || 0;
   const activeCountdown = formatMMSS(primaryItem?.reservedUntil || null);
+
+  function moveToStep(nextStep: number) {
+    if (nextStep >= 2 && !hasTrackedCheckoutStart && primaryItem) {
+      trackCheckoutStart();
+      setHasTrackedCheckoutStart(true);
+    }
+
+    setStep(nextStep);
+  }
+
+  function handleStepThreeContinue() {
+    if (paymentMethod === "full_bank_transfer" && !receiptFile) {
+      setError("Upload payment receipt before continuing.");
+      return;
+    }
+
+    moveToStep(4);
+  }
 
   async function sendOtp() {
     if (!otpPhone) {
@@ -120,6 +142,16 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
       return;
     }
 
+    if (paymentMethod === "cod_with_advance" && !otpVerified) {
+      setError("Phone verification is required for COD orders.");
+      return;
+    }
+
+    if (paymentMethod === "full_bank_transfer" && !receiptFile) {
+      setError("Upload payment receipt before placing your order.");
+      return;
+    }
+
     setError(null);
 
     let receiptImageUrl = "";
@@ -157,6 +189,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
         return;
       }
 
+      trackPurchase(total);
       setSuccessMessage("Order placed and sent for verification.");
       clearCart();
       setStep(1);
@@ -164,6 +197,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
       setOtpCode("");
       setOtpPhone("");
       setOtpVerified(false);
+      setHasTrackedCheckoutStart(false);
     });
   }
 
@@ -213,9 +247,22 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                 <div className="border-4 border-black bg-white p-4 shadow-hard">
                   <p className="font-heading text-2xl">YOUR PAIR</p>
                   {items.length > 1 && (
-                    <p className="mt-2 border-2 border-black bg-yellow-100 p-2 text-sm font-bold">
-                      1-of-1 mode is active. Only the first pair can be checked out.
-                    </p>
+                    <div className="mt-2 space-y-2">
+                      <p className="border-2 border-black bg-yellow-100 p-2 text-sm font-bold">
+                        1-of-1 mode is active. Only the first pair can be checked out.
+                      </p>
+                      {items.slice(1).map((item) => (
+                        <div key={item.id} className="flex items-center justify-between border-2 border-black bg-gray-50 p-2">
+                          <p className="text-xs font-bold">{item.title}</p>
+                          <button
+                            onClick={() => handleRemove(item.id)}
+                            className="border-2 border-black bg-white px-2 py-1 text-[11px] font-bold"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   )}
 
                   {primaryItem ? (
@@ -245,7 +292,11 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                 <div className="border-4 border-black bg-yellow-200 p-4 shadow-hard">
                   <p className="font-heading text-2xl">ORDER TOTAL</p>
                   <p className="text-4xl font-heading">Rs. {total.toLocaleString()}</p>
-                  <p className="text-sm font-bold">COD advance required: Rs. 1,000</p>
+                  {paymentMethod === "cod_with_advance" ? (
+                    <p className="text-sm font-bold">COD advance required: Rs. 1,000</p>
+                  ) : (
+                    <p className="text-sm font-bold">Full amount must be paid before dispatch.</p>
+                  )}
                 </div>
 
                 <div className="border-4 border-black bg-white p-4 shadow-hard">
@@ -272,7 +323,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                 {step === 1 && (
                   <div className="space-y-4 border-4 border-black bg-white p-4 shadow-hard">
                     <p className="font-heading text-2xl">STEP 1: PHONE VERIFICATION</p>
-                    <p className="text-sm font-bold text-gray-700">Optional but recommended to reduce fake COD orders.</p>
+                    <p className="text-sm font-bold text-gray-700">Required for COD orders to reduce fake checkouts.</p>
 
                     <label className="block font-bold">
                       <span className="mb-2 block">Phone Number</span>
@@ -303,8 +354,8 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                       Verify OTP
                     </ComicButton>
 
-                    <ComicButton onClick={() => setStep(2)} className="w-full">
-                      Continue {otpVerified ? "(Verified)" : "Without OTP"}
+                    <ComicButton onClick={() => moveToStep(2)} className="w-full">
+                      Continue
                     </ComicButton>
                   </div>
                 )}
@@ -330,10 +381,10 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                     </button>
 
                     <div className="grid grid-cols-2 gap-2">
-                      <ComicButton variant="secondary" onClick={() => setStep(1)} className="w-full">
+                      <ComicButton variant="secondary" onClick={() => moveToStep(1)} className="w-full">
                         Back
                       </ComicButton>
-                      <ComicButton onClick={() => setStep(3)} className="w-full">
+                      <ComicButton onClick={() => moveToStep(3)} className="w-full">
                         Continue
                       </ComicButton>
                     </div>
@@ -362,10 +413,10 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                     </label>
 
                     <div className="grid grid-cols-2 gap-2">
-                      <ComicButton variant="secondary" onClick={() => setStep(2)} className="w-full">
+                      <ComicButton variant="secondary" onClick={() => moveToStep(2)} className="w-full">
                         Back
                       </ComicButton>
-                      <ComicButton onClick={() => setStep(4)} className="w-full">
+                      <ComicButton onClick={handleStepThreeContinue} className="w-full">
                         Continue
                       </ComicButton>
                     </div>
@@ -411,7 +462,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                     </div>
 
                     <div className="grid grid-cols-2 gap-2">
-                      <ComicButton variant="secondary" onClick={() => setStep(3)} className="w-full">
+                      <ComicButton variant="secondary" onClick={() => moveToStep(3)} className="w-full">
                         Back
                       </ComicButton>
                       <ComicButton onClick={uploadReceiptAndPlaceOrder} className="w-full" disabled={isBusy || !primaryItem}>

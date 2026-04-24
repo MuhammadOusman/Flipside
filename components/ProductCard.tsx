@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { useWishlist } from "@/store/wishlist";
 import { useCartStore } from "@/store/cart";
 import { useUiStore } from "@/store/ui";
+import { useAnalytics } from "@/store/analytics";
 import { reserveProductAction } from "@/app/actions/storefront";
 import type { ProductStatus } from "@/lib/db/types";
 
@@ -51,7 +52,9 @@ export default function ProductCard({
 }: ProductCardProps) {
   const { isInWishlist, addItem, removeItem } = useWishlist();
   const addCartItem = useCartStore((state) => state.addItem);
+  const cartItems = useCartStore((state) => state.items);
   const openCartDrawer = useUiStore((state) => state.openCartDrawer);
+  const trackCartAdd = useAnalytics((state) => state.trackCartAdd);
   const inWishlist = isInWishlist(id);
   const [justAdded, setJustAdded] = useState(false);
   const [reserveError, setReserveError] = useState<string | null>(null);
@@ -99,6 +102,18 @@ export default function ProductCard({
     e.stopPropagation();
     setReserveError(null);
 
+    const alreadyInCart = cartItems.some((item) => item.id === id);
+    if (alreadyInCart) {
+      openCartDrawer();
+      return;
+    }
+
+    const hasDifferentReservedPair = cartItems.some((item) => item.id !== id);
+    if (hasDifferentReservedPair) {
+      setReserveError("Only one pair can be reserved at a time. Remove the current pair from cart first.");
+      return;
+    }
+
     startTransition(async () => {
       const result = await reserveProductAction(id);
       if (!result.ok) {
@@ -116,6 +131,7 @@ export default function ProductCard({
         slug,
         reservedUntil: result.reservedUntil,
       });
+      trackCartAdd(id);
       openCartDrawer();
     });
   };
