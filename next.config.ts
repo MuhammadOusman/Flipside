@@ -10,6 +10,10 @@ try {
 }
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    // Ensure Next infers the correct repository root even when there are multiple lockfiles on the machine.
+    root: __dirname,
+  },
   images: {
     remotePatterns: [
       {
