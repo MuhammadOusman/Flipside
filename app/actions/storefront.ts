@@ -99,6 +99,7 @@ export type OrderCompletionResponse = {
     name: string;
     size: string;
     qty: number;
+    price: number;
   };
   customer_history: {
     prior_orders: number;
@@ -167,7 +168,7 @@ export async function createOrderCompletionPayload(
 
   const { data: product, error: productErr } = await supabase
     .from("products")
-    .select("id,status,reserved_by,reserved_until,brand,model,size_uk,size_eur")
+    .select("id,status,reserved_by,reserved_until,brand,model,size_uk,size_eur,price")
     .eq("tenant_id", tenantId)
     .eq("id", payload.productId)
     .single();
@@ -283,6 +284,7 @@ export async function createOrderCompletionPayload(
       name: productName,
       size: productSize,
       qty: 1,
+      price: Number(product.price || 0),
     },
     customer_history: {
       prior_orders: priorOrders,
