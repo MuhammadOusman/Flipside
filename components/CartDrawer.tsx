@@ -64,6 +64,28 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
     city: "",
   });
 
+  function normalizePhoneNumber(phone: string) {
+    const trimmed = phone.trim();
+    if (!trimmed) {
+      return "";
+    }
+
+    const digits = trimmed.replace(/\D/g, "");
+    if (trimmed.startsWith("+")) {
+      return `+${digits}`;
+    }
+
+    if (digits.length === 11 && digits.startsWith("03")) {
+      return `+92${digits.slice(1)}`;
+    }
+
+    if (digits.length === 12 && digits.startsWith("92")) {
+      return `+${digits}`;
+    }
+
+    return `+${digits}`;
+  }
+
   const primaryItem = items[0] || null;
   const total = primaryItem?.price || 0;
   const activeCountdown = formatMMSS(primaryItem?.reservedUntil || null);
@@ -92,10 +114,17 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
       return;
     }
 
+    const normalizedPhone = normalizePhoneNumber(otpPhone);
+    if (!normalizedPhone) {
+      setError("Enter a valid phone number.");
+      return;
+    }
+
     setError(null);
+    setOtpPhone(normalizedPhone);
     const supabase = getSupabaseBrowserClient();
     const { error: otpError } = await supabase.auth.signInWithOtp({
-      phone: otpPhone,
+      phone: normalizedPhone,
     });
 
     if (otpError) {
@@ -112,9 +141,15 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
       return;
     }
 
+    const normalizedPhone = normalizePhoneNumber(otpPhone);
+    if (!normalizedPhone) {
+      setError("Enter a valid phone number.");
+      return;
+    }
+
     const supabase = getSupabaseBrowserClient();
     const { error: verifyError } = await supabase.auth.verifyOtp({
-      phone: otpPhone,
+      phone: normalizedPhone,
       token: otpCode,
       type: "sms",
     });
@@ -124,6 +159,8 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
       return;
     }
 
+    setOtpPhone(normalizedPhone);
+    setCustomer((s) => ({ ...s, phone: normalizedPhone }));
     setOtpVerified(true);
     setSuccessMessage("Phone verified.");
   }
@@ -139,6 +176,12 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
       return;
     }
 
+    const normalizedCustomerPhone = normalizePhoneNumber(customer.phone);
+    if (!normalizedCustomerPhone) {
+      setError("Enter a valid phone number for the order.");
+      return;
+    }
+
     if (paymentMethod === "cod_with_advance" && !otpVerified) {
       setError("Phone verification is required for COD orders.");
       return;
@@ -149,6 +192,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
       return;
     }
 
+    setCustomer((s) => ({ ...s, phone: normalizedCustomerPhone }));
     setError(null);
 
     let receiptImageUrl = "";
@@ -179,7 +223,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
         body: JSON.stringify({
           productId: primaryItem.id,
           customerName: customer.name,
-          phone: customer.phone,
+          phone: normalizedCustomerPhone,
           address: customer.address,
           city: customer.city,
           paymentMethod,
@@ -333,7 +377,8 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                       <span className="mb-2 block">Phone Number</span>
                       <input
                         className="w-full border-2 border-black p-3"
-                        placeholder="923XXXXXXXXX"
+                        placeholder="+923XXXXXXXXX"
+                        inputMode="tel"
                         value={otpPhone}
                         onChange={(e) => setOtpPhone(e.target.value)}
                       />
