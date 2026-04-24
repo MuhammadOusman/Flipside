@@ -24,6 +24,7 @@ interface CartDrawerProps {
 }
 
 type PaymentMethod = "cod_with_advance" | "full_bank_transfer";
+const OTP_ENABLED = false;
 
 function formatMMSS(timestamp?: string | null) {
   if (!timestamp) {
@@ -39,6 +40,14 @@ function formatMMSS(timestamp?: string | null) {
   const mm = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
   const ss = String(totalSeconds % 60).padStart(2, "0");
   return `${mm}:${ss}`;
+}
+
+function mapOtpErrorMessage(message: string) {
+  if (/phone_provider_disabled|unsupported phone provider/i.test(message)) {
+    return "SMS OTP is not enabled in Supabase. Go to Supabase Dashboard -> Authentication -> Providers -> Phone and configure Twilio/MessageBird/Vonage.";
+  }
+
+  return message;
 }
 
 export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
@@ -108,7 +117,25 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
     moveToStep(4);
   }
 
+  function continueFromStepOne() {
+    const normalizedPhone = normalizePhoneNumber(otpPhone || customer.phone);
+    if (!normalizedPhone) {
+      setError("Enter a valid phone number before continuing.");
+      return;
+    }
+
+    setError(null);
+    setOtpPhone(normalizedPhone);
+    setCustomer((s) => ({ ...s, phone: normalizedPhone }));
+    moveToStep(2);
+  }
+
   async function sendOtp() {
+    if (!OTP_ENABLED) {
+      setError("OTP is temporarily disabled. You can continue checkout without verification.");
+      return;
+    }
+
     if (!otpPhone) {
       setError("Enter your phone number before requesting OTP.");
       return;
@@ -130,7 +157,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
 
     if (otpError) {
       console.debug("[CartDrawer] sendOtp error", otpError);
-      setError(otpError.message);
+      setError(mapOtpErrorMessage(otpError.message));
       return;
     }
 
@@ -138,6 +165,11 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   }
 
   async function verifyOtp() {
+    if (!OTP_ENABLED) {
+      setError("OTP is temporarily disabled. You can continue checkout without verification.");
+      return;
+    }
+
     if (!otpPhone || !otpCode) {
       setError("Phone and OTP code are required.");
       return;
@@ -159,7 +191,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
 
     if (verifyError) {
       console.debug("[CartDrawer] verifyOtp error", verifyError);
-      setError(verifyError.message);
+      setError(mapOtpErrorMessage(verifyError.message));
       return;
     }
 
@@ -186,7 +218,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
       return;
     }
 
-    if (paymentMethod === "cod_with_advance" && !otpVerified) {
+    if (OTP_ENABLED && paymentMethod === "cod_with_advance" && !otpVerified) {
       setError("Phone verification is required for COD orders.");
       return;
     }
@@ -357,7 +389,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                 <div className="border-4 border-black bg-white p-4 shadow-hard">
                   <p className="mb-2 font-heading text-xl">STEP {step} OF 4</p>
                   <div className="grid grid-cols-4 gap-2 text-center text-xs font-bold">
-                    {["Phone", "Payment", "Receipt", "Place Order"].map((label, idx) => (
+                    {["Contact", "Payment", "Receipt", "Place Order"].map((label, idx) => (
                       <div
                         key={label}
                         className={`border-2 border-black p-2 ${step >= idx + 1 ? "bg-[var(--comic-green)] text-white" : "bg-gray-100"}`}
@@ -377,8 +409,10 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
 
                 {step === 1 && (
                   <div className="space-y-4 border-4 border-black bg-white p-4 shadow-hard">
-                    <p className="font-heading text-2xl">STEP 1: PHONE VERIFICATION</p>
-                    <p className="text-sm font-bold text-gray-700">Required for COD orders to reduce fake checkouts.</p>
+                    <p className="font-heading text-2xl">STEP 1: CONTACT NUMBER</p>
+                    <p className="text-sm font-bold text-gray-700">
+                      Enter your phone number to continue checkout. OTP is temporarily disabled.
+                    </p>
 
                     <label className="block font-bold">
                       <span className="mb-2 block">Phone Number</span>
@@ -391,26 +425,30 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                       />
                     </label>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <ComicButton onClick={sendOtp} className="w-full" variant="secondary">
-                        <span className="flex items-center justify-center gap-2">
-                          <Phone size={18} /> Send OTP
-                        </span>
-                      </ComicButton>
+                    {OTP_ENABLED && (
+                      <>
+                        <div className="grid grid-cols-2 gap-3">
+                          <ComicButton onClick={sendOtp} className="w-full" variant="secondary">
+                            <span className="flex items-center justify-center gap-2">
+                              <Phone size={18} /> Send OTP
+                            </span>
+                          </ComicButton>
 
-                      <input
-                        className="w-full border-2 border-black p-3"
-                        placeholder="4-digit OTP"
-                        value={otpCode}
-                        onChange={(e) => setOtpCode(e.target.value)}
-                      />
-                    </div>
+                          <input
+                            className="w-full border-2 border-black p-3"
+                            placeholder="4-digit OTP"
+                            value={otpCode}
+                            onChange={(e) => setOtpCode(e.target.value)}
+                          />
+                        </div>
 
-                    <ComicButton onClick={verifyOtp} className="w-full" variant="secondary">
-                      Verify OTP
-                    </ComicButton>
+                        <ComicButton onClick={verifyOtp} className="w-full" variant="secondary">
+                          Verify OTP
+                        </ComicButton>
+                      </>
+                    )}
 
-                    <ComicButton onClick={() => moveToStep(2)} className="w-full">
+                    <ComicButton onClick={continueFromStepOne} className="w-full">
                       Continue
                     </ComicButton>
                   </div>
