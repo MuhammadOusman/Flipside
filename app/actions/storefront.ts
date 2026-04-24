@@ -254,11 +254,15 @@ export async function createOrderCompletionPayload(
     return { ok: false, message: orderErr?.message || "Failed to create order" };
   }
 
-  await supabase
+  const { error: productUpdateError } = await supabase
     .from("products")
-    .update({ status: "reserved", reserved_by: sessionId, reserved_until: null })
+    .update({ status: "sold", reserved_by: null, reserved_until: null })
     .eq("tenant_id", tenantId)
     .eq("id", payload.productId);
+
+  if (productUpdateError) {
+    console.error("Failed to mark product sold after order creation:", productUpdateError);
+  }
 
   const productName = `${product.brand} ${product.model}`.trim();
   const productSize = product.size_eur

@@ -278,6 +278,21 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
       const result = await response.json();
       if (!response.ok) {
         console.debug("[CartDrawer] placeOrder error", result);
+        if (result.code === "PRODUCT_ALREADY_ORDERED") {
+          if (primaryItem) {
+            await releaseProductReservationAction(primaryItem.id);
+          }
+          clearCart();
+          setStep(1);
+          setReceiptFile(null);
+          setOtpCode("");
+          setOtpPhone("");
+          setOtpVerified(false);
+          setHasTrackedCheckoutStart(false);
+          setError("This pair was already ordered. We removed it from your cart, please choose another pair.");
+          return;
+        }
+
         setError(result.error || result.message || "Failed to place order");
         return;
       }
