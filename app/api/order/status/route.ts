@@ -106,9 +106,10 @@ export async function POST(req: NextRequest) {
       .eq("id", order.product_id);
   }
 
-  revalidatePath("/shop");
-  revalidatePath("/admin/orders");
-  revalidatePath("/admin/dashboard");
+  revalidatePath("/shop", "page");
+  revalidatePath("/admin/orders", "page");
+  revalidatePath("/admin/dashboard", "page");
+  revalidatePath("/admin/products", "page");
 
 	return jsonResponse({
 		ok: true,
