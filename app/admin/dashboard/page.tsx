@@ -57,17 +57,22 @@ export default async function AdminDashboardPage() {
           <p className="mt-3 font-bold text-gray-600">No pending orders right now.</p>
         ) : (
           <ul className="mt-4 space-y-2">
-            {orders.slice(0, 5).map((order) => (
-              <li key={order.id} className="flex items-center justify-between border-2 border-black bg-gray-50 p-3">
-                <div>
-                  <p className="font-bold">{order.customer_name}</p>
-                  <p className="text-xs font-bold text-gray-600">{order.products?.brand} {order.products?.model}</p>
-                </div>
-                <Link href="/admin/orders" className="border-2 border-black bg-[var(--comic-purple)] px-3 py-1 text-xs font-bold text-white">
-                  Review
-                </Link>
-              </li>
-            ))}
+            {orders.slice(0, 5).map((order) => {
+              const product = order.products;
+              return (
+                <li key={order.id} className="flex items-center justify-between border-2 border-black bg-gray-50 p-3">
+                  <div>
+                    <p className="font-bold">{order.customer_name}</p>
+                    <p className="text-xs font-bold text-gray-600">
+                      {product ? `${product.brand} ${product.model}` : "Unknown Product"}
+                    </p>
+                  </div>
+                  <Link href="/admin/orders" className="border-2 border-black bg-[var(--comic-purple)] px-3 py-1 text-xs font-bold text-white">
+                    Review
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
