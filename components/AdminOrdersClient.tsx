@@ -30,6 +30,15 @@ export default function AdminOrdersClient({ initialOrders }: { initialOrders: Ad
 
   const selectedOrder = orders.find((order) => order.id === selectedId) || null;
 
+  async function handleRefresh() {
+    startTransition(async () => {
+      const res = await fetch("/admin/orders", { cache: "no-store" });
+      if (res.ok) {
+        window.location.reload();
+      }
+    });
+  }
+
   function refreshLocal(orderId: string, patch: Partial<AdminOrder>) {
     setOrders((prev) => prev.map((order) => (order.id === orderId ? { ...order, ...patch } : order)));
   }
@@ -60,7 +69,16 @@ export default function AdminOrdersClient({ initialOrders }: { initialOrders: Ad
   return (
     <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
       <section className="space-y-3 border-4 border-black bg-white p-4 shadow-hard">
-        <h1 className="font-heading text-3xl">PENDING VERIFICATION</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="font-heading text-3xl">PENDING VERIFICATION</h1>
+          <button 
+            onClick={handleRefresh}
+            disabled={isBusy}
+            className="border-2 border-black bg-white px-2 py-1 text-xs font-bold hover:bg-gray-100 disabled:opacity-50"
+          >
+            {isBusy ? "REFRESHING..." : "REFRESH"}
+          </button>
+        </div>
         {orders.length === 0 && <p className="text-sm font-bold text-gray-600">No pending orders.</p>}
 
         {orders.map((order) => (
