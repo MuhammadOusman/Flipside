@@ -10,6 +10,9 @@ export type PaymentMethod = "cod_with_advance" | "full_bank_transfer";
 
 export type OrderStatus =
   | "pending_verification"
+  | "confirm"
+  | "cancelled"
+  | "manual"
   | "processing"
   | "dispatched"
   | "delivered"

@@ -22,13 +22,13 @@ function jsonResponse(body: unknown, status = 200) {
 function mapExternalToInternalStatus(status: ExternalOrderStatus): OrderStatus {
 	switch (status) {
 		case "confirm":
-			return "processing";
+			return "confirm";
 		case "cancelled":
-			return "returned_fake";
+			return "cancelled";
 		case "manual":
-			return "pending_verification";
+			return "manual";
 		default:
-			return "pending_verification";
+			return "manual";
 	}
 }
 
@@ -71,36 +71,44 @@ export async function POST(req: NextRequest) {
 	const tenantId = await getTenantIdFromRequest();
 	const supabase = getSupabaseAdminClient();
 
-	const { data: order, error: orderError } = await supabase
-		.from("orders")
-		.select("id,order_status")
-		.eq("tenant_id", tenantId)
-		.eq("id", order_id)
-		.maybeSingle();
+  const { data: order, error: orderError } = await supabase
+    .from("orders")
+    .select("id,order_status,product_id")
+    .eq("tenant_id", tenantId)
+    .eq("id", order_id)
+    .maybeSingle();
 
-	if (orderError) {
-		return jsonResponse({ error: orderError.message }, 400);
-	}
+  if (orderError) {
+    return jsonResponse({ error: orderError.message }, 400);
+  }
 
-	if (!order) {
-		return jsonResponse({ error: "Order not found" }, 404);
-	}
+  if (!order) {
+    return jsonResponse({ error: "Order not found" }, 404);
+  }
 
-	const internalStatus = mapExternalToInternalStatus(normalizedStatus);
+  const internalStatus = mapExternalToInternalStatus(normalizedStatus);
 
-	const { error: updateOrderError } = await supabase
-		.from("orders")
-		.update({ order_status: internalStatus })
-		.eq("tenant_id", tenantId)
-		.eq("id", order_id);
+  const { error: updateOrderError } = await supabase
+    .from("orders")
+    .update({ order_status: internalStatus })
+    .eq("tenant_id", tenantId)
+    .eq("id", order_id);
 
-	if (updateOrderError) {
-		return jsonResponse({ error: updateOrderError.message }, 400);
-	}
+  if (updateOrderError) {
+    return jsonResponse({ error: updateOrderError.message }, 400);
+  }
 
-	revalidatePath("/shop");
-	revalidatePath("/admin/orders");
-	revalidatePath("/admin/dashboard");
+  if (internalStatus === "confirm") {
+    await supabase
+      .from("products")
+      .update({ status: "sold", reserved_by: null, reserved_until: null })
+      .eq("tenant_id", tenantId)
+      .eq("id", order.product_id);
+  }
+
+  revalidatePath("/shop");
+  revalidatePath("/admin/orders");
+  revalidatePath("/admin/dashboard");
 
 	return jsonResponse({
 		ok: true,

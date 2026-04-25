@@ -188,7 +188,7 @@ export async function getAdminOrders(tenantId: string, onlyPending = false) {
     .order("created_at", { ascending: false });
 
   if (onlyPending) {
-    query = query.eq("order_status", "pending_verification");
+    query = query.in("order_status", ["pending_verification", "manual"]);
   }
 
   const { data, error } = await query;
