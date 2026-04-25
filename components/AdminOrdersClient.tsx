@@ -32,9 +32,17 @@ export default function AdminOrdersClient({ initialOrders }: { initialOrders: Ad
 
   async function handleRefresh() {
     startTransition(async () => {
-      // Small delay to let webhook finish if it's currently running
-      await new Promise(resolve => setTimeout(resolve, 500));
-      window.location.reload();
+      try {
+        const res = await fetch("/admin/orders", { 
+          cache: "no-store",
+          headers: { "x-refresh": "true" }
+        });
+        if (res.ok) {
+          window.location.href = window.location.pathname + "?t=" + Date.now();
+        }
+      } catch (e) {
+        window.location.reload();
+      }
     });
   }
 
