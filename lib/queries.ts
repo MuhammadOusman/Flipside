@@ -34,15 +34,21 @@ function sanitizeSearchTerm(input?: string) {
     .trim();
 }
 
-function isMissingProductsTableError(error: { message?: string; code?: string } | null) {
+function isDataFetchingError(error: { message?: string; code?: string } | null) {
   if (!error) {
     return false;
   }
 
+  const msg = (error.message || "").toLowerCase();
   // Supabase/PostgREST returns PGRST205 when relation is missing from schema cache.
+  // We also check for common Postgres error codes and messages for missing tables/columns/enums.
   return (
     error.code === "PGRST205" ||
-    (error.message || "").includes("Could not find the table 'public.products' in the schema cache")
+    error.code === "PGRST204" ||
+    error.code === "42P01" ||
+    msg.includes("could not find the table") ||
+    msg.includes("does not exist") ||
+    msg.includes("invalid input value for enum")
   );
 }
 
@@ -100,7 +106,7 @@ export async function getPublicProducts(
 
   const { data, error } = await query;
   if (error) {
-    if (isMissingProductsTableError(error)) {
+    if (isDataFetchingError(error)) {
       return [] as PublicProduct[];
     }
     throw new Error(error.message);
@@ -118,7 +124,7 @@ export async function getPublicProductFilterOptions(tenantId: string) {
     .in("status", ["available", "reserved", "dropping_soon", "sold"]);
 
   if (error) {
-    if (isMissingProductsTableError(error)) {
+    if (isDataFetchingError(error)) {
       return { brands: [] as string[], sizes: [] as number[] };
     }
     throw new Error(error.message);
@@ -172,6 +178,9 @@ export async function getAdminProducts(tenantId: string) {
     .order("created_at", { ascending: false });
 
   if (error) {
+    if (isDataFetchingError(error)) {
+      return [] as ProductRow[];
+    }
     throw new Error(error.message);
   }
 
@@ -193,10 +202,19 @@ export async function getAdminOrders(tenantId: string, onlyPending = false) {
 
   const { data, error } = await query;
   if (error) {
+    if (isDataFetchingError(error)) {
+      return [];
+    }
     throw new Error(error.message);
   }
 
-  return (data || []) as (OrderRow & {
+  // Normalize products join which can sometimes return an array in some PostgREST configurations
+  const normalized = (data || []).map((order: any) => ({
+    ...order,
+    products: Array.isArray(order.products) ? order.products[0] : order.products,
+  }));
+
+  return normalized as (OrderRow & {
     products?: { id: string; brand: string; model: string; price: number; size_uk: number };
   })[];
 }
@@ -210,6 +228,9 @@ export async function getGrossProfit(tenantId: string) {
     .eq("status", "sold");
 
   if (error) {
+    if (isDataFetchingError(error)) {
+      return { revenue: 0, cost: 0, grossProfit: 0 };
+    }
     throw new Error(error.message);
   }
 
