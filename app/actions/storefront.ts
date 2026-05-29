@@ -59,16 +59,19 @@ export async function releaseProductReservationAction(productId: string) {
   const sessionId = await getOrCreateSessionId();
   const supabase = getSupabaseAdminClient();
 
-  const { error } = await supabase
-    .from("products")
-    .update({ status: "available", reserved_until: null, reserved_by: null })
-    .eq("tenant_id", tenantId)
-    .eq("id", productId)
-    .eq("reserved_by", sessionId)
-    .eq("status", "reserved");
+  const { data, error } = await supabase.rpc("cancel_reservation", {
+    p_tenant_id: tenantId,
+    p_product_id: productId,
+    p_session_id: sessionId,
+  });
 
-  if (error) {
-    return { ok: false, message: error.message };
+  const result = Array.isArray(data) ? data[0] : data;
+
+  if (error || !result || !result.success) {
+    return {
+      ok: false,
+      message: result?.message || error?.message || "Could not release reservation",
+    };
   }
 
   revalidatePath("/shop");
@@ -148,130 +151,33 @@ export async function createOrderCompletionPayload(
   const sessionId = await getOrCreateSessionId();
   const supabase = getSupabaseAdminClient();
 
-  const { data: customer } = await supabase
-    .from("customers")
-    .select("is_blacklisted,total_orders,returned_parcels")
-    .eq("tenant_id", tenantId)
-    .eq("phone", payload.phone)
-    .maybeSingle();
+  const { data, error } = await supabase.rpc("place_order", {
+    p_tenant_id: tenantId,
+    p_session_id: sessionId,
+    p_product_id: payload.productId,
+    p_customer_name: payload.customerName,
+    p_phone: payload.phone,
+    p_address: payload.address,
+    p_city: payload.city,
+    p_payment_method: payload.paymentMethod,
+    p_receipt_image_url: payload.receiptImageUrl || null,
+  });
 
-  const priorOrders = customer?.total_orders || 0;
-  const priorRto = customer?.returned_parcels || 0;
+  const result = Array.isArray(data) ? data[0] : data;
 
-  if (payload.paymentMethod === "cod_with_advance" && customer?.is_blacklisted) {
+  if (error || !result || !result.success) {
+    const code = result?.code || error?.code;
+    const message = result?.message || error?.message || "Failed to create order";
+
     return {
       ok: false,
-      code: "BLACKLISTED_COD",
-      message: "Your account is restricted from COD. Please select Full Bank Transfer.",
+      code,
+      message,
     };
   }
-
-  const { data: product, error: productErr } = await supabase
-    .from("products")
-    .select("id,status,reserved_by,reserved_until,brand,model,size_uk,size_eur,price")
-    .eq("tenant_id", tenantId)
-    .eq("id", payload.productId)
-    .single();
-
-  if (productErr || !product) {
-    return { ok: false, message: "Product not found" };
-  }
-
-  const { data: existingOrder, error: existingOrderErr } = await supabase
-    .from("orders")
-    .select("id")
-    .eq("tenant_id", tenantId)
-    .eq("product_id", payload.productId)
-    .maybeSingle();
-
-  if (existingOrderErr) {
-    return { ok: false, message: existingOrderErr.message };
-  }
-
-  if (existingOrder) {
-    return {
-      ok: false,
-      code: "PRODUCT_ALREADY_ORDERED",
-      message: "This item has already been ordered. Please choose another pair.",
-    };
-  }
-
-  const reservedByOther =
-    product.status === "reserved" &&
-    product.reserved_until &&
-    new Date(product.reserved_until).getTime() > Date.now() &&
-    product.reserved_by !== sessionId;
-
-  if (reservedByOther || product.status === "sold") {
-    return {
-      ok: false,
-      message: "This pair is no longer available. Please pick another item.",
-    };
-  }
-
-  const { error: customerUpsertError } = await supabase.from("customers").upsert(
-    {
-      tenant_id: tenantId,
-      phone: payload.phone,
-      total_orders: (customer?.total_orders || 0) + 1,
-      returned_parcels: customer?.returned_parcels || 0,
-      is_blacklisted: customer?.is_blacklisted || false,
-    },
-    {
-      onConflict: "tenant_id,phone",
-    }
-  );
-
-  if (customerUpsertError) {
-    return { ok: false, message: customerUpsertError.message };
-  }
-
-  const { data: order, error: orderErr } = await supabase
-    .from("orders")
-    .insert({
-      tenant_id: tenantId,
-      customer_name: payload.customerName,
-      phone: payload.phone,
-      address: payload.address,
-      city: payload.city,
-      product_id: payload.productId,
-      payment_method: payload.paymentMethod,
-      advance_paid: false,
-      receipt_image_url: payload.receiptImageUrl || null,
-      order_status: "pending_verification",
-    })
-    .select("id")
-    .single();
-
-  if (orderErr || !order) {
-    if (orderErr?.code === "23505") {
-      return {
-        ok: false,
-        code: "PRODUCT_ALREADY_ORDERED",
-        message: "This item has already been ordered. Please choose another pair.",
-      };
-    }
-
-    return { ok: false, message: orderErr?.message || "Failed to create order" };
-  }
-
-  const { error: productUpdateError } = await supabase
-    .from("products")
-    .update({ status: "sold", reserved_by: null, reserved_until: null })
-    .eq("tenant_id", tenantId)
-    .eq("id", payload.productId);
-
-  if (productUpdateError) {
-    console.error("Failed to mark product sold after order creation:", productUpdateError);
-  }
-
-  const productName = `${product.brand} ${product.model}`.trim();
-  const productSize = product.size_eur
-    ? `${product.size_eur} EUR`
-    : `${product.size_uk} UK`;
 
   const response: OrderCompletionResponse = {
-    order_id: order.id,
+    order_id: result.order_id,
     customer: {
       name: payload.customerName,
       phone: payload.phone,
@@ -281,14 +187,14 @@ export async function createOrderCompletionPayload(
       city: payload.city,
     },
     order: {
-      name: productName,
-      size: productSize,
+      name: `${result.product_brand || ""} ${result.product_model || ""}`.trim(),
+      size: result.product_size || "",
       qty: 1,
-      price: Number(product.price || 0),
+      price: Number(result.product_price || 0),
     },
     customer_history: {
-      prior_orders: priorOrders,
-      prior_rto: priorRto,
+      prior_orders: result.prior_orders ?? 0,
+      prior_rto: result.prior_rto ?? 0,
     },
   };
 
@@ -296,7 +202,7 @@ export async function createOrderCompletionPayload(
 
   return {
     ok: true,
-    orderId: order.id,
+    orderId: result.order_id,
     response,
   };
 }

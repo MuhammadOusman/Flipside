@@ -99,11 +99,37 @@ export async function POST(req: NextRequest) {
   }
 
   if (internalStatus === "confirm") {
-    await supabase
-      .from("products")
-      .update({ status: "sold", reserved_by: null, reserved_until: null })
-      .eq("tenant_id", tenantId)
-      .eq("id", order.product_id);
+    const { data: confirmData, error: confirmError } = await supabase.rpc(
+      "confirm_reservation_by_order_id",
+      {
+        p_tenant_id: tenantId,
+        p_order_id: order_id,
+      }
+    );
+    const confirmResult = Array.isArray(confirmData) ? confirmData[0] : confirmData;
+    if (confirmError || !confirmResult?.success) {
+      return jsonResponse(
+        { error: confirmResult?.message || confirmError?.message || "Could not confirm inventory" },
+        500
+      );
+    }
+  }
+
+  if (internalStatus === "cancelled") {
+    const { data: cancelData, error: cancelError } = await supabase.rpc(
+      "cancel_order_reservation_by_order_id",
+      {
+        p_tenant_id: tenantId,
+        p_order_id: order_id,
+      }
+    );
+    const cancelResult = Array.isArray(cancelData) ? cancelData[0] : cancelData;
+    if (cancelError || !cancelResult?.success) {
+      return jsonResponse(
+        { error: cancelResult?.message || cancelError?.message || "Could not cancel reservation" },
+        500
+      );
+    }
   }
 
 	return jsonResponse({

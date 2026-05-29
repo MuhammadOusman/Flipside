@@ -76,11 +76,23 @@ export async function approvePaymentAction(orderId: string) {
     return { ok: false, message: updateErr.message };
   }
 
-  await supabase
-    .from("products")
-    .update({ status: "sold", reserved_by: null, reserved_until: null })
-    .eq("tenant_id", tenantId)
-    .eq("id", order.product_id);
+  const { data: confirmData, error: confirmError } = await supabase.rpc(
+    "confirm_reservation_by_order_id",
+    {
+      p_tenant_id: tenantId,
+      p_order_id: order.id,
+    }
+  );
+
+  const confirmResult = Array.isArray(confirmData) ? confirmData[0] : confirmData;
+  if (confirmError || !confirmResult || !confirmResult.success) {
+    return {
+      ok: false,
+      message:
+        confirmResult?.message || confirmError?.message ||
+        "Could not confirm inventory for this order",
+    };
+  }
 
   await sendOrderStatusCallback({
     orderId: order.id,
